@@ -20,9 +20,14 @@ jobs:
 
       - run: make compose-check
 
-      - run: python -m runtime validate --config config/service-resilience-host-guard.json
-
-      - run: docker compose -f deployment/examples/local/compose.json -f deployment/examples/local/host-guard.compose.json config --quiet
+      - name: Validate example configurations and Compose overrides
+        run: |
+          for config in config/service-resilience-*.json config/examples/*.json; do
+            python -m runtime validate --config "$config"
+          done
+          for override in deployment/examples/local/*.compose.json; do
+            docker compose -f deployment/examples/local/compose.json -f "$override" config --quiet
+          done
 
       - name: Build module images and exercise adaptation
         run: make integration
