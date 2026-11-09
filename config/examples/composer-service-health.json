@@ -1,0 +1,57 @@
+{
+  "includes": [
+    "monitor-http.json"
+  ],
+  "domains": {
+    "service_health": {
+      "composer": {
+        "rules": [
+          {
+            "name": "service_needs_attention",
+            "type": "any_metrics",
+            "cooldown_seconds": 2,
+            "conditions": [
+              {
+                "metric": "local_service_healthy",
+                "operator": "lte",
+                "value": 0
+              },
+              {
+                "metric": "error_rate",
+                "operator": "gte",
+                "value": 0.2
+              }
+            ]
+          },
+          {
+            "name": "service_healthy",
+            "type": "all_metrics",
+            "cooldown_seconds": 2,
+            "conditions": [
+              {
+                "metric": "local_service_healthy",
+                "operator": "eq",
+                "value": 1
+              },
+              {
+                "metric": "error_rate",
+                "operator": "lt",
+                "value": 0.2
+              }
+            ]
+          },
+          {
+            "name": "service_recovered",
+            "type": "event_sequence",
+            "within_seconds": 15,
+            "event_types": [
+              "service_needs_attention",
+              "service_healthy"
+            ],
+            "cooldown_seconds": 15
+          }
+        ]
+      }
+    }
+  }
+}

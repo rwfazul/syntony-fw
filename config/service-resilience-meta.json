@@ -1,0 +1,7 @@
+{
+  "includes": [
+    "syntony_config.json",
+    "../specifications/events/dependency_policy_profiles.json",
+    "../specifications/policies/dependency_policy_profiles.json"
+  ]
+}

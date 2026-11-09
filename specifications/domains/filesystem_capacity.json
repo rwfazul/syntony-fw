@@ -1,0 +1,100 @@
+{
+  "domains": {
+    "filesystem_capacity": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "filesystem_usage",
+            "type": "command",
+            "timeout_seconds": 3,
+            "argv": [
+              "python",
+              "deployment/examples/monitors/filesystem_metrics.py",
+              "--path",
+              "${CAPACITY_PATH}"
+            ],
+            "event_time_field": "sample.timestamp",
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "disk_free_bytes",
+                  "path": "filesystem.free_bytes"
+                },
+                {
+                  "metric": "disk_used_percent",
+                  "path": "filesystem.used_percent"
+                }
+              ]
+            }
+          },
+          {
+            "name": "system_load",
+            "type": "system",
+            "event_time_field": "timestamp",
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "load_avg_1m",
+                  "path": "load_avg_1m"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "composer": {
+        "metric_history_ttl_seconds": 20,
+        "event_history_ttl_seconds": 30,
+        "rules": [
+          {
+            "name": "filesystem_pressure",
+            "type": "metric_window",
+            "metric": "disk_used_percent",
+            "operator": "gte",
+            "value": 90,
+            "within_seconds": 10,
+            "min_matches": 3,
+            "cooldown_seconds": 2
+          },
+          {
+            "name": "filesystem_headroom",
+            "type": "threshold",
+            "metric": "disk_used_percent",
+            "operator": "lte",
+            "value": 85,
+            "cooldown_seconds": 2
+          },
+          {
+            "name": "disk_and_load_pressure",
+            "type": "all_metrics",
+            "cooldown_seconds": 5,
+            "conditions": [
+              {
+                "metric": "disk_used_percent",
+                "operator": "gte",
+                "value": 90
+              },
+              {
+                "metric": "load_avg_1m",
+                "operator": "gte",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "name": "filesystem_recovered",
+            "type": "event_sequence",
+            "within_seconds": 20,
+            "event_types": [
+              "filesystem_pressure",
+              "filesystem_headroom"
+            ],
+            "cooldown_seconds": 20
+          }
+        ]
+      }
+    }
+  }
+}

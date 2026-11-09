@@ -1,0 +1,12 @@
+{
+  "includes": [
+    "syntony_config.json",
+    "../specifications/domains/operating_system.json",
+    "../specifications/events/host_maintenance_guard.json"
+  ],
+  "cep": {
+    "watermark_domains": [
+      "operating_system"
+    ]
+  }
+}

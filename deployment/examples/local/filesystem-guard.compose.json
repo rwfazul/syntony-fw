@@ -1,0 +1,71 @@
+{
+  "services": {
+    "cep": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-filesystem-guard.json"
+      }
+    },
+    "coordinator": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-filesystem-guard.json"
+      }
+    },
+    "monitor_filesystem_capacity": {
+      "image": "${IMAGE_PREFIX:-syntony}-monitor:${IMAGE_TAG:-dev}",
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0",
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-filesystem-guard.json",
+        "CAPACITY_PATH": "${CAPACITY_PATH:-/app}"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "monitor",
+        "--domain",
+        "filesystem_capacity"
+      ]
+    },
+    "composer_filesystem_capacity": {
+      "image": "${IMAGE_PREFIX:-syntony}-composer:${IMAGE_TAG:-dev}",
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0",
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-filesystem-guard.json"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "composer",
+        "--domain",
+        "filesystem_capacity"
+      ]
+    }
+  }
+}

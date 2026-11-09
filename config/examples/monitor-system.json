@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "includes": [
+    "../../specifications/domains/operating_system.json"
+  ],
+  "cep": {
+    "watermark_policy": "participant_min",
+    "watermark_domains": [
+      "operating_system"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "services": {
+    "cep": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-meta.json"
+      }
+    },
+    "coordinator": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-meta.json"
+      }
+    },
+    "executor": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-meta.json"
+      }
+    }
+  }
+}

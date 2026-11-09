@@ -1,0 +1,15 @@
+{
+  "parameters": {
+    "CAPACITY_PATH": "."
+  },
+  "includes": [
+    "syntony_config.json",
+    "../specifications/domains/filesystem_capacity.json",
+    "../specifications/events/filesystem_restart_guard.json"
+  ],
+  "cep": {
+    "watermark_domains": [
+      "filesystem_capacity"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "cep": {
+    "initial_policy_profile": "normal",
+    "policy_profiles": {
+      "normal": [
+        "select_dependency_fallback"
+      ],
+      "fallback": [
+        "enable_fallback_for_dependency",
+        "select_normal_operation"
+      ]
+    },
+    "patterns": [
+      {
+        "name": "select_dependency_fallback",
+        "type": "passthrough_event",
+        "event_type": "dependency_unavailable",
+        "domain": "external_dependency",
+        "coord_type": "E_trg",
+        "priority": 0
+      },
+      {
+        "name": "select_normal_operation",
+        "type": "passthrough_event",
+        "event_type": "dependency_available",
+        "domain": "external_dependency",
+        "coord_type": "E_trg",
+        "priority": 0
+      }
+    ]
+  }
+}

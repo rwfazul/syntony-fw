@@ -1,0 +1,44 @@
+{
+  "domains": {
+    "operating_system": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "local_os_load",
+            "type": "system",
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "load_avg_1m",
+                  "path": "load_avg_1m"
+                }
+              ]
+            },
+            "event_time_field": "timestamp"
+          }
+        ]
+      },
+      "composer": {
+        "rules": [
+          {
+            "name": "host_load_high",
+            "type": "threshold",
+            "metric": "load_avg_1m",
+            "operator": "gt",
+            "value": 4,
+            "cooldown_seconds": 5
+          },
+          {
+            "name": "host_load_normal",
+            "type": "threshold",
+            "metric": "load_avg_1m",
+            "operator": "lte",
+            "value": 4,
+            "cooldown_seconds": 5
+          }
+        ]
+      }
+    }
+  }
+}

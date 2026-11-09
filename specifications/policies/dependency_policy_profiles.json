@@ -1,0 +1,32 @@
+{
+  "coordinator": {
+    "policy_mappings": {
+      "select_dependency_fallback": [
+        {
+          "type": "ACTIVATE_POLICY_PROFILE",
+          "domain": "external_dependency",
+          "params": {
+            "target_profile": "fallback"
+          }
+        }
+      ],
+      "select_normal_operation": [
+        {
+          "type": "ACTIVATE_POLICY_PROFILE",
+          "domain": "external_dependency",
+          "params": {
+            "target_profile": "normal"
+          }
+        }
+      ]
+    }
+  },
+  "executor": {
+    "actions": {
+      "ACTIVATE_POLICY_PROFILE": {
+        "mode": "activate_profile",
+        "timeout_seconds": 10
+      }
+    }
+  }
+}

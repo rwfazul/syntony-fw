@@ -1,0 +1,40 @@
+{
+  "cep": {
+    "patterns": [
+      {
+        "name": "guard_restart_during_filesystem_pressure",
+        "type": "passthrough_event",
+        "domain": "filesystem_capacity",
+        "event_type": "filesystem_pressure",
+        "coord_type": "E_block",
+        "blocked_action_types": [
+          "RESTART_LOCAL_SERVICE"
+        ],
+        "block_scope": "global",
+        "block_ttl_seconds": 8,
+        "priority": 0,
+        "block_id": "filesystem_pressure"
+      },
+      {
+        "name": "release_restart_after_filesystem_pressure",
+        "type": "participants_all",
+        "domain": "filesystem_capacity",
+        "coord_type": "E_unblock",
+        "block_id": "filesystem_pressure",
+        "priority": 0,
+        "participants": [
+          {
+            "domain": "filesystem_capacity",
+            "event_type": "filesystem_headroom"
+          }
+        ],
+        "forbidden_participants": [
+          {
+            "domain": "filesystem_capacity",
+            "event_type": "filesystem_pressure"
+          }
+        ]
+      }
+    ]
+  }
+}

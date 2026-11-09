@@ -1,0 +1,294 @@
+{
+  "name": "syntony",
+  "services": {
+    "redis": {
+      "image": "redis:7.4-alpine",
+      "command": [
+        "redis-server",
+        "--appendonly",
+        "yes"
+      ],
+      "volumes": [
+        "syntony-state:/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ],
+        "interval": "2s",
+        "timeout": "2s",
+        "retries": 20
+      }
+    },
+    "dependency": {
+      "image": "${IMAGE_PREFIX:-syntony}-example:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "deployment/examples/local/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "deployment/examples/local/resilience_system.py",
+        "dependency"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request;urllib.request.urlopen(\"http://127.0.0.1:8081/health\",timeout=1)"
+        ],
+        "interval": "2s",
+        "timeout": "2s",
+        "retries": 20
+      }
+    },
+    "gateway": {
+      "image": "${IMAGE_PREFIX:-syntony}-example:${IMAGE_TAG:-dev}",
+      "init": true,
+      "environment": {
+        "DEPENDENCY_URL": "http://dependency:8081"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "deployment/examples/local/resilience_system.py",
+        "supervisor"
+      ],
+      "ports": [
+        "127.0.0.1:${GATEWAY_PORT:-18081}:8080"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request;urllib.request.urlopen(\"http://127.0.0.1:8080/health\",timeout=1)"
+        ],
+        "interval": "2s",
+        "timeout": "2s",
+        "retries": 20
+      }
+    },
+    "monitor_application_service": {
+      "image": "${IMAGE_PREFIX:-syntony}-monitor:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "runtime/monitor/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "monitor",
+        "--domain",
+        "application_service"
+      ]
+    },
+    "composer_application_service": {
+      "image": "${IMAGE_PREFIX:-syntony}-composer:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "runtime/composer/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "composer",
+        "--domain",
+        "application_service"
+      ]
+    },
+    "monitor_external_dependency": {
+      "image": "${IMAGE_PREFIX:-syntony}-monitor:${IMAGE_TAG:-dev}",
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "monitor",
+        "--domain",
+        "external_dependency"
+      ]
+    },
+    "composer_external_dependency": {
+      "image": "${IMAGE_PREFIX:-syntony}-composer:${IMAGE_TAG:-dev}",
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "gateway": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "composer",
+        "--domain",
+        "external_dependency"
+      ]
+    },
+    "cep": {
+      "image": "${IMAGE_PREFIX:-syntony}-cep:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "runtime/cep/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "cep"
+      ]
+    },
+    "coordinator": {
+      "image": "${IMAGE_PREFIX:-syntony}-coordinator:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "runtime/coordinator/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "coordinator"
+      ]
+    },
+    "executor": {
+      "image": "${IMAGE_PREFIX:-syntony}-executor:${IMAGE_TAG:-dev}",
+      "build": {
+        "context": "../../..",
+        "dockerfile": "runtime/executor/Dockerfile"
+      },
+      "init": true,
+      "environment": {
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": {
+        "redis": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "../../../config:/app/config:ro",
+        "../../../specifications:/app/specifications:ro"
+      ],
+      "command": [
+        "python",
+        "-m",
+        "runtime",
+        "executor"
+      ]
+    }
+  },
+  "volumes": {
+    "syntony-state": {}
+  }
+}

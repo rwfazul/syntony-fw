@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "domains": {
+    "service_health": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "http_metrics",
+            "type": "http_json",
+            "timeout_seconds": 3,
+            "event_time_field": "timestamp",
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "local_service_healthy",
+                  "path": "local_service_healthy"
+                },
+                {
+                  "metric": "error_rate",
+                  "path": "error_rate"
+                }
+              ]
+            },
+            "url": "${METRICS_URL}"
+          }
+        ]
+      },
+      "composer": {
+        "rules": [
+          {
+            "name": "service_unavailable",
+            "type": "threshold",
+            "metric": "local_service_healthy",
+            "operator": "lte",
+            "value": 0,
+            "cooldown_seconds": 1
+          }
+        ]
+      }
+    }
+  },
+  "cep": {
+    "watermark_policy": "participant_min",
+    "watermark_domains": [
+      "service_health"
+    ]
+  },
+  "parameters": {
+    "METRICS_URL": "http://127.0.0.1:18081/metrics"
+  }
+}

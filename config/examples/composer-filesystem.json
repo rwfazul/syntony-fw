@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "parameters": {
+    "CAPACITY_PATH": "."
+  },
+  "includes": [
+    "../../specifications/domains/filesystem_capacity.json"
+  ],
+  "cep": {
+    "watermark_policy": "participant_min",
+    "watermark_domains": [
+      "filesystem_capacity"
+    ]
+  }
+}

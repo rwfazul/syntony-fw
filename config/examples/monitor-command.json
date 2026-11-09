@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "domains": {
+    "host_capacity": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "command_metrics",
+            "type": "command",
+            "timeout_seconds": 3,
+            "event_time_field": "timestamp",
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "load_avg_1m",
+                  "path": "load_avg_1m"
+                },
+                {
+                  "metric": "disk_free_bytes",
+                  "path": "disk_free_bytes"
+                },
+                {
+                  "metric": "disk_total_bytes",
+                  "path": "disk_total_bytes"
+                }
+              ]
+            },
+            "argv": [
+              "python",
+              "deployment/examples/monitors/system_metrics.py",
+              "--path",
+              "."
+            ]
+          }
+        ]
+      },
+      "composer": {
+        "rules": [
+          {
+            "name": "disk_space_low",
+            "type": "threshold",
+            "metric": "disk_free_bytes",
+            "operator": "lt",
+            "value": 1073741824,
+            "cooldown_seconds": 5
+          }
+        ]
+      }
+    }
+  },
+  "cep": {
+    "watermark_policy": "participant_min",
+    "watermark_domains": [
+      "host_capacity"
+    ]
+  }
+}
