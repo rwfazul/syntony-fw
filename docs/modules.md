@@ -2,6 +2,15 @@
 
 Every executable module is a Python package with an explicit `__all__` interface, a Dockerfile and a requirements file. Start module processes through `python -m runtime <component>`, which validates the complete instance first. The module image defaults select the same component. Build all module images from the repository root so shared configuration/contracts are available.
 
+## Architecture
+
+![Syntony architecture from metric sources to target systems, with feedback and internal state](figures/syntony-architecture.png)
+
+The figure shows Syntony's conceptual architecture. In this instantiation, each
+Redis instance supports one Coordinator and one Executor. The Executor publishes
+feedback to the observation stream for the CEP and records execution outcomes in
+the logical internal state layer. See the [end-to-end control flow](event-contracts.md#end-to-end-control-flow).
+
 ## Monitor
 
 Public interface: `collect`, `monitor_loop`. Configuration: `domains.<domain>.monitor.sources`; process selection: `--domain`. It polls actual HTTP JSON, command JSON or OS interfaces and publishes metric envelopes. Every source needs a name and explicit metric paths. Timestamps come from `event_time_field` or the local collection clock. A failed source produces a diagnostic, not a substituted value. Adding a protocol requires collection code, validator support, image dependencies and real acquisition tests.

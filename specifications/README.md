@@ -2,6 +2,12 @@
 
 Syntony correlates observations from multiple domains and applies policies to coordinate adaptive reconfiguration. The Specification Catalog defines what an instance observes, how it interprets observations and which actions it can request. The runtime evaluates these declarations and calls the configured adapters.
 
+![Reusable domain packages feed the Specification Catalog. The instance configuration selects definitions and binds them to the target environment to run Syntony.](../docs/figures/specification-catalog.png)
+
+The figure shows how reusable specifications become a Syntony instance. The
+domain labels illustrate possible integrations. See [supplied examples](#supplied-examples)
+for the configurations included in this repository.
+
 ## Specification layers
 
 - **Domains** define metric sources and Composer rules that turn local conditions into observed events.

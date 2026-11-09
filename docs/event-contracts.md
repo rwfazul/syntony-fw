@@ -1,5 +1,19 @@
 # Event and stream contracts
 
+## End-to-end control flow
+
+![End-to-end flow from raw metrics through event-time admission, policy checks, execution and feedback into the Round Table](figures/end-to-end-flow.png)
+
+The Event Composer evaluates domain-local rules on admissible metrics and
+publishes observed events (`E_obs`). The CEP uses domain watermarks to close
+stable rounds in the Round Table and evaluates configured patterns, including
+cross-domain rules. Matches can emit coordination events (`E_trg`, `E_sync`,
+`E_block` or `E_unblock`). The Coordinator applies policy before dispatching
+actions. The Executor publishes each execution outcome as `E_fed` for the CEP
+to use in subsequent evaluations.
+
+## Redis Streams
+
 Redis Stream records carry a JSON envelope in the `data` field. Timestamps are fractional Unix seconds. The stream names below are implemented contracts, not transport-agnostic placeholders.
 
 | Stream | Producer → consumer | Main fields |

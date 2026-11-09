@@ -12,7 +12,7 @@ The control pipeline separates metric acquisition, local interpretation, event-t
 
 The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**.
 
-For a guided path from setup to extension, see the [documentation index](docs/README.md).
+See the [runtime architecture](docs/modules.md#architecture) and the [end-to-end control flow](docs/event-contracts.md#end-to-end-control-flow). The [documentation index](docs/README.md) guides you from setup to extension.
 
 ## Repository layout
 
