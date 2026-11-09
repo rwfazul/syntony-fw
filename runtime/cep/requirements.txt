@@ -1,1 +1,2 @@
+# redis-py client. Local Compose runs Redis Server 7.4.
 redis>=5.2,<6
