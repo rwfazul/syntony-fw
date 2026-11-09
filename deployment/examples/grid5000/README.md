@@ -10,7 +10,7 @@ Choose the example that matches the intended topology:
 | [CEP only](cep/README.md) | `deploy.py --profile cep` | CEP and Redis on one node; real external producers required |
 | [Ceph and Syntony](ceph/README.md) | `ceph/cluster.py` | Three storage nodes, two RGW nodes and one application node; collocated or distributed Syntony |
 
-The first two profiles remain compact examples. The six-node example retains the substantial preparation/distribution machinery from `tools/ceph_grid5000/prepare.py`, `entry.sh`, and `scripts/grid5000/cluster.py`. It can build on a reserved node, export Docker images once, copy them through the frontend, verify checksums, and load them on all target nodes. It also synchronizes the Syntony sources and configuration and emits a Compose descriptor for each host.
+The six-node example generates a Compose descriptor for each host and distributes the Syntony sources, configuration and container images to the reserved nodes.
 
 ## Files and entry points
 
@@ -71,7 +71,7 @@ A Ceph cluster and a Syntony control policy are separate assets. The supplied HT
 
 ## Operating scope
 
-All remote actions require target membership in the active OAR reservation. Tools use SSH rather than exposing the Docker daemon over TCP. Ceph's adapted laboratory configuration disables internal Ceph authentication; the distributed Syntony example exposes Redis on the application node's private IP without authentication so remote modules can connect. Use only isolated reserved resources and do not expose these endpoints publicly. Configure authenticated/private transport before using a different environment.
+All remote actions require target membership in the active OAR reservation. Tools use SSH rather than exposing the Docker daemon over TCP. The Ceph lab configuration disables internal Ceph authentication; the distributed Syntony example exposes Redis on the application node's private IP without authentication so remote modules can connect. Use only isolated reserved resources and do not expose these endpoints publicly. Configure authenticated/private transport before using a different environment.
 
 Stop operations preserve volumes, files and block-file state. Explicitly manage that state before a new instance. No live reservation was provisioned while preparing this distribution. Offline generation, schema checks, and unit tests are distinct from a successful deployment at a Grid site.
 

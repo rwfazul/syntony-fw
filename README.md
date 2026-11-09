@@ -1,6 +1,6 @@
 # Syntony
 
-> An open-source Syntony instantiation following the implementation approach and guidelines described in the thesis.
+> An open-source implementation of Syntony, based on the architecture and instantiation guidelines described in the thesis ([Fazul, 2026](#how-to-cite)).
 
 The `syntony-fw` repository instantiates Syntony for HTTP service recovery across application and dependency domains.
 
@@ -181,15 +181,15 @@ Execution feedback is an `E_fed` observation with `action_done`, `action_fail`, 
 
 `make integration` refuses to replace an already-running instance. It opens real HTTP ports and uses Docker; invoke it explicitly. Tests include actual HTTP/process checks, isolated Redis transactions for admission and recovery, and storage doubles for individual temporal rules.
 
-## Grid’5000 and Ceph
+## Grid’5000 deployment examples
 
 The [Grid deployment guide](deployment/examples/grid5000/README.md) distinguishes three cases:
 
 1. **Syntony on one node:** a compact full pipeline deployment with the real local application.
 2. **CEP on one node:** CEP plus Redis, awaiting real external observation/watermark producers.
-3. **Six-node Ceph plus Syntony:** adapted original per-host preparation, Ceph MON/MGR/OSD/RGW startup, source transfer, image export/fan-out/import, health checks and stop operations. Syntony modules can be collocated or explicitly placed across the six nodes.
+3. **Ceph and Syntony on six nodes:** an example that provisions a Ceph cluster alongside Syntony on reserved Grid’5000 nodes.
 
-The [dedicated six-node guide](deployment/examples/grid5000/ceph/README.md) explains the preparation, source and image distribution, placement and lifecycle commands. It deploys real Ceph infrastructure; it does not claim that the default HTTP-recovery catalog controls Ceph. Ceph-specific monitoring and action policies must be supplied to connect those two layers.
+The [Ceph deployment example](deployment/examples/grid5000/ceph/README.md) shows how to configure the nodes, distribute images and check cluster health. To use Syntony to manage Ceph, add Ceph metrics and action handlers to the Specification Catalog.
 
 No Grid allocation or live deployment is performed by `prepare`. Build and run on reserved resources, not on the site frontend. Check the generated topology, network bindings and cluster health in the chosen reservation before running workloads.
 

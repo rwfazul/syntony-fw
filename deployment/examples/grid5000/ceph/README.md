@@ -23,7 +23,7 @@ The generated Ceph/HAProxy and distributed Syntony descriptors use host networki
 
 ## 1. Transfer and provision
 
-Follow the [common guide](../README.md) to package/transfer the Syntony source tree and obtain a six-node deploy reservation. Provision an environment with Docker Engine, Compose v2, rsync, SSH and synchronized clocks. Use the site/cluster selected for your reservation, not a hardcoded previous Nancy/Nantes allocation.
+Follow the [common guide](../README.md) to package/transfer the Syntony source tree and obtain a six-node deploy reservation. Provision an environment with Docker Engine, Compose v2, rsync, SSH and synchronized clocks. Use the site and cluster selected for your reservation.
 
 ```bash
 sort -u "$OAR_NODEFILE" > reserved-nodes.txt
@@ -99,7 +99,7 @@ The generated topology and image build must still be validated in a real Grid re
 
 ## Scheduled job template
 
-`job.sh` adapts the original six-node OAR job to this deployment-only workflow. Configure `SYNTONY_SOURCE_DIR`, `GRID_ENVIRONMENT`, `GRID_SITE`, `GRID_CLUSTER`, and optionally `SYNTONY_LAYOUT=distributed`. It provisions the reserved nodes, verifies Docker/Compose, prepares a fresh inventory, distributes sources/images, starts both layers, checks health, and keeps an inspection window before stopping services. Adapt the resource request and environment to the site. There are no benchmark scenarios or calibration/campaign gates hidden in this job.
+`job.sh` provides an OAR job template for this example. Configure `SYNTONY_SOURCE_DIR`, `GRID_ENVIRONMENT`, `GRID_SITE`, `GRID_CLUSTER`, and optionally `SYNTONY_LAYOUT=distributed`. It provisions the reserved nodes, verifies Docker/Compose, prepares a fresh inventory, distributes sources/images, starts both layers, checks health, and keeps an inspection window before stopping services. Adapt the resource request and environment to the site.
 
 The infrastructure setup does not create a default S3 identity or package credentials. Create a Ceph RGW user and manage its keys explicitly when connecting a real S3 client.
 
