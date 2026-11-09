@@ -1,0 +1,64 @@
+{
+  "domains": {
+    "external_dependency": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "supervisor_dependency_metrics",
+            "type": "http_json",
+            "timeout_seconds": 2,
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "dependency_healthy",
+                  "path": "dependency_healthy"
+                }
+              ]
+            },
+            "metadata": {
+              "collection_mode": "http_json"
+            },
+            "url": "${GATEWAY_URL}/metrics?window=2",
+            "event_time_field": "timestamp"
+          }
+        ]
+      },
+      "composer": {
+        "metric_history_ttl_seconds": 10,
+        "event_history_ttl_seconds": 30,
+        "rules": [
+          {
+            "name": "dependency_unavailable",
+            "type": "threshold",
+            "metric": "dependency_healthy",
+            "operator": "lte",
+            "value": 0,
+            "priority": 0,
+            "cooldown_seconds": 1
+          },
+          {
+            "name": "dependency_available",
+            "type": "threshold",
+            "metric": "dependency_healthy",
+            "operator": "gte",
+            "value": 1,
+            "priority": 2,
+            "cooldown_seconds": 1
+          },
+          {
+            "name": "dependency_recovered",
+            "type": "event_sequence",
+            "event_types": [
+              "dependency_unavailable",
+              "dependency_available"
+            ],
+            "within_seconds": 20,
+            "priority": 3,
+            "cooldown_seconds": 20
+          }
+        ]
+      }
+    }
+  }
+}

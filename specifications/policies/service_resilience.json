@@ -1,0 +1,294 @@
+{
+  "coordinator": {
+    "policy_mappings": {
+      "enable_fallback_for_dependency": [
+        {
+          "type": "ENABLE_FALLBACK",
+          "params": {},
+          "domain": "application_service"
+        }
+      ],
+      "restart_confirmed_local_failure": [
+        {
+          "type": "RESTART_LOCAL_SERVICE",
+          "params": {},
+          "domain": "application_service"
+        }
+      ],
+      "restore_primary_after_dependency_recovery": [
+        {
+          "type": "DISABLE_FALLBACK",
+          "params": {},
+          "domain": "application_service"
+        }
+      ],
+      "verify_uncertain_local_recovery": [
+        {
+          "type": "VERIFY_LOCAL_SERVICE",
+          "domain": "application_service",
+          "params": {}
+        }
+      ],
+      "verify_failed_local_recovery": [
+        {
+          "type": "VERIFY_LOCAL_SERVICE",
+          "domain": "application_service",
+          "params": {}
+        }
+      ]
+    },
+    "dedupe_rules": [
+      {
+        "policy": "enable_fallback_for_dependency",
+        "scope": "global",
+        "window_seconds": 10
+      },
+      {
+        "policy": "restart_confirmed_local_failure",
+        "scope": "global",
+        "window_seconds": 8
+      },
+      {
+        "policy": "restore_primary_after_dependency_recovery",
+        "scope": "global",
+        "window_seconds": 8
+      },
+      {
+        "policy": "verify_uncertain_local_recovery",
+        "scope": "global",
+        "window_seconds": 3
+      },
+      {
+        "policy": "verify_failed_local_recovery",
+        "scope": "global",
+        "window_seconds": 3
+      }
+    ],
+    "policy_constraints": {
+      "enable_fallback_for_dependency": {
+        "required_flags": {
+          "application_service": {
+            "service_reconfiguration_running": false,
+            "service_recovery_needed": false,
+            "service_status_unknown": false
+          }
+        },
+        "set_flags_on_dispatch": {
+          "application_service": {
+            "service_reconfiguration_running": true
+          }
+        },
+        "exclusivity_class": "service_reconfiguration",
+        "deadline_seconds": 10
+      },
+      "restart_confirmed_local_failure": {
+        "required_flags": {
+          "application_service": {
+            "service_reconfiguration_running": false,
+            "service_recovery_needed": false,
+            "service_status_unknown": false
+          }
+        },
+        "set_flags_on_dispatch": {
+          "application_service": {
+            "service_reconfiguration_running": true
+          }
+        },
+        "exclusivity_class": "service_reconfiguration",
+        "deadline_seconds": 10
+      },
+      "restore_primary_after_dependency_recovery": {
+        "required_flags": {
+          "application_service": {
+            "service_reconfiguration_running": false,
+            "service_recovery_needed": false,
+            "service_status_unknown": false
+          }
+        },
+        "set_flags_on_dispatch": {
+          "application_service": {
+            "service_reconfiguration_running": true
+          }
+        },
+        "exclusivity_class": "service_reconfiguration",
+        "deadline_seconds": 10
+      },
+      "verify_uncertain_local_recovery": {
+        "required_flags": {
+          "application_service": {
+            "service_status_unknown": true
+          }
+        },
+        "deadline_seconds": 10
+      },
+      "verify_failed_local_recovery": {
+        "required_flags": {
+          "application_service": {
+            "service_recovery_needed": true
+          }
+        },
+        "deadline_seconds": 10
+      }
+    }
+  },
+  "executor": {
+    "actions": {
+      "ENABLE_FALLBACK": {
+        "mode": "command",
+        "timeout_seconds": 5,
+        "argv": [
+          "python",
+          "deployment/examples/local/control_action.py",
+          "--gateway",
+          "${GATEWAY_URL}",
+          "--action",
+          "ENABLE_FALLBACK"
+        ],
+        "on_success": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running",
+              "service_recovery_needed",
+              "service_status_unknown"
+            ]
+          }
+        },
+        "on_failure": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running"
+            ]
+          },
+          "set_flags": {
+            "application_service": {
+              "service_recovery_needed": true
+            }
+          }
+        },
+        "on_timeout": {
+          "set_flags": {
+            "application_service": {
+              "service_status_unknown": true,
+              "service_reconfiguration_running": true
+            }
+          }
+        }
+      },
+      "DISABLE_FALLBACK": {
+        "mode": "command",
+        "timeout_seconds": 5,
+        "argv": [
+          "python",
+          "deployment/examples/local/control_action.py",
+          "--gateway",
+          "${GATEWAY_URL}",
+          "--action",
+          "DISABLE_FALLBACK"
+        ],
+        "on_success": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running",
+              "service_recovery_needed",
+              "service_status_unknown"
+            ]
+          }
+        },
+        "on_failure": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running"
+            ]
+          },
+          "set_flags": {
+            "application_service": {
+              "service_recovery_needed": true
+            }
+          }
+        },
+        "on_timeout": {
+          "set_flags": {
+            "application_service": {
+              "service_status_unknown": true,
+              "service_reconfiguration_running": true
+            }
+          }
+        }
+      },
+      "RESTART_LOCAL_SERVICE": {
+        "mode": "command",
+        "timeout_seconds": 6,
+        "argv": [
+          "python",
+          "deployment/examples/local/control_action.py",
+          "--gateway",
+          "${GATEWAY_URL}",
+          "--action",
+          "RESTART_LOCAL_SERVICE"
+        ],
+        "on_success": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running",
+              "service_recovery_needed",
+              "service_status_unknown"
+            ]
+          }
+        },
+        "on_failure": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running"
+            ]
+          },
+          "set_flags": {
+            "application_service": {
+              "service_recovery_needed": true
+            }
+          }
+        },
+        "on_timeout": {
+          "set_flags": {
+            "application_service": {
+              "service_status_unknown": true,
+              "service_reconfiguration_running": true
+            }
+          }
+        }
+      },
+      "VERIFY_LOCAL_SERVICE": {
+        "mode": "command",
+        "timeout_seconds": 5,
+        "argv": [
+          "python",
+          "deployment/examples/local/control_action.py",
+          "--gateway",
+          "${GATEWAY_URL}",
+          "--action",
+          "VERIFY_LOCAL_SERVICE"
+        ],
+        "on_success": {
+          "clear_flags": {
+            "application_service": [
+              "service_reconfiguration_running",
+              "service_recovery_needed",
+              "service_status_unknown"
+            ]
+          },
+          "release_exclusivity": [
+            "service_reconfiguration"
+          ]
+        }
+      }
+    }
+  },
+  "state": {
+    "flags": {
+      "application_service": {
+        "service_reconfiguration_running": false,
+        "service_recovery_needed": false,
+        "service_status_unknown": false
+      }
+    }
+  }
+}

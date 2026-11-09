@@ -1,0 +1,99 @@
+{
+  "domains": {
+    "application_service": {
+      "monitor": {
+        "sources": [
+          {
+            "name": "supervisor_application_metrics",
+            "type": "http_json",
+            "timeout_seconds": 2,
+            "parser": {
+              "type": "json",
+              "metrics": [
+                {
+                  "metric": "error_rate",
+                  "path": "error_rate"
+                },
+                {
+                  "metric": "success_rate",
+                  "path": "success_rate"
+                },
+                {
+                  "metric": "user_p95_ms",
+                  "path": "user_p95_ms"
+                },
+                {
+                  "metric": "fallback_rate",
+                  "path": "fallback_rate"
+                },
+                {
+                  "metric": "fallback_enabled",
+                  "path": "fallback_enabled"
+                },
+                {
+                  "metric": "local_service_healthy",
+                  "path": "local_service_healthy"
+                },
+                {
+                  "metric": "syntony_restart_count",
+                  "path": "syntony_restart_count"
+                },
+                {
+                  "metric": "generation",
+                  "path": "generation"
+                }
+              ]
+            },
+            "metadata": {
+              "collection_mode": "http_json"
+            },
+            "url": "${GATEWAY_URL}/metrics?window=2",
+            "event_time_field": "timestamp"
+          }
+        ]
+      },
+      "composer": {
+        "metric_history_ttl_seconds": 10,
+        "event_history_ttl_seconds": 10,
+        "rules": [
+          {
+            "name": "application_degraded",
+            "type": "threshold",
+            "metric": "error_rate",
+            "operator": "gte",
+            "value": 0.2,
+            "priority": 1,
+            "cooldown_seconds": 1
+          },
+          {
+            "name": "local_service_unavailable",
+            "type": "threshold",
+            "metric": "local_service_healthy",
+            "operator": "lte",
+            "value": 0,
+            "priority": 0,
+            "cooldown_seconds": 1
+          },
+          {
+            "name": "fallback_active",
+            "type": "threshold",
+            "metric": "fallback_enabled",
+            "operator": "gte",
+            "value": 1,
+            "priority": 2,
+            "cooldown_seconds": 1
+          },
+          {
+            "name": "local_service_available",
+            "type": "threshold",
+            "metric": "local_service_healthy",
+            "operator": "gte",
+            "value": 1,
+            "priority": 2,
+            "cooldown_seconds": 1
+          }
+        ]
+      }
+    }
+  }
+}

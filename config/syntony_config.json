@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "parameters": {
+    "GATEWAY_URL": "http://gateway:8080"
+  },
+  "includes": [
+    "../specifications/domains/application_service.json",
+    "../specifications/domains/external_dependency.json",
+    "../specifications/events/service_resilience.json",
+    "../specifications/policies/service_resilience.json"
+  ],
+  "timing": {
+    "sample_interval_seconds": 0.5,
+    "watermark_delay_seconds": 0.5,
+    "allowed_lateness_seconds": 0.25
+  },
+  "cep": {
+    "watermark_policy": "participant_min",
+    "watermark_domains": [
+      "application_service",
+      "external_dependency"
+    ],
+    "relative_tick_origin": true,
+    "tick": {
+      "seconds": 1,
+      "retention_ticks": 8
+    }
+  }
+}

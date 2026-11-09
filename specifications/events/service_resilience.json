@@ -1,0 +1,95 @@
+{
+  "cep": {
+    "patterns": [
+      {
+        "name": "enable_fallback_for_dependency",
+        "type": "participants_all",
+        "participants": [
+          {
+            "domain": "external_dependency",
+            "event_type": "dependency_unavailable"
+          },
+          {
+            "domain": "application_service",
+            "event_type": "application_degraded"
+          }
+        ],
+        "within_ticks": 2,
+        "coord_type": "E_sync",
+        "priority": 1
+      },
+      {
+        "name": "restart_confirmed_local_failure",
+        "type": "participants_all",
+        "participants": [
+          {
+            "domain": "external_dependency",
+            "event_type": "dependency_available"
+          },
+          {
+            "domain": "application_service",
+            "event_type": "application_degraded"
+          },
+          {
+            "domain": "application_service",
+            "event_type": "local_service_unavailable"
+          }
+        ],
+        "within_ticks": 2,
+        "coord_type": "E_sync",
+        "priority": 1
+      },
+      {
+        "name": "restore_primary_after_dependency_recovery",
+        "type": "participants_all",
+        "participants": [
+          {
+            "domain": "external_dependency",
+            "event_type": "dependency_available"
+          },
+          {
+            "domain": "application_service",
+            "event_type": "fallback_active"
+          }
+        ],
+        "within_ticks": 1,
+        "coord_type": "E_sync",
+        "priority": 3
+      },
+      {
+        "name": "verify_uncertain_local_recovery",
+        "type": "participants_all",
+        "participants": [
+          {
+            "domain": "application_service",
+            "event_type": "local_service_available"
+          },
+          {
+            "domain": "external_dependency",
+            "event_type": "dependency_available"
+          }
+        ],
+        "within_ticks": 1,
+        "coord_type": "E_sync",
+        "priority": 0
+      },
+      {
+        "name": "verify_failed_local_recovery",
+        "type": "participants_all",
+        "participants": [
+          {
+            "domain": "application_service",
+            "event_type": "local_service_available"
+          },
+          {
+            "domain": "external_dependency",
+            "event_type": "dependency_available"
+          }
+        ],
+        "within_ticks": 1,
+        "coord_type": "E_sync",
+        "priority": 0
+      }
+    ]
+  }
+}
