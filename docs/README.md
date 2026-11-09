@@ -4,14 +4,14 @@ Start with the [project README](../README.md), then follow the path that fits yo
 
 ## Instantiate and run
 
-1. Use the [local deployment guide](../deployment/examples/local/README.md) to build the module images and verify actual process recovery.
-2. Read [event contracts](event-contracts.md) to understand how metrics, observations, watermarks, coordination and feedback travel through the pipeline.
-3. Configure [policy state and recovery](state-and-policies.md) to admit actions and handle execution outcomes.
-4. Use [runtime modules](modules.md) for package interfaces, configuration ownership and deployment responsibilities.
+1. Read [runtime modules](modules.md) and [event contracts](event-contracts.md) for component roles and event flow.
+2. Use the [instance configuration guide](../config/README.md) to select catalog packages and bind endpoints.
+3. Configure [policy state and recovery](state-and-policies.md) for admission and execution outcomes.
+4. Run the HTTP recovery example with the [local deployment guide](../deployment/examples/local/README.md).
 
 ## Extend Syntony
 
-Start with [the example packages](../specifications/README.md), then follow [the Specification Catalog guide](extending-the-catalog.md): select packages, add a domain, define events and policies, bind real handlers, start the corresponding producers, and validate the instance. The [monitor examples](../deployment/examples/monitors/README.md) cover real command, HTTP and OS acquisition. The host-pressure guard shows how to add a domain to a complete instance.
+Start with [the Specification Catalog](../specifications/README.md), then follow [the Specification Catalog guide](extending-the-catalog.md): select packages, add a domain, define events and policies, bind real handlers, start the corresponding producers, and validate the instance. The [monitor examples](../deployment/examples/monitors/README.md) cover real command, HTTP and OS acquisition. The host-pressure guard shows how to add a domain to a complete instance.
 
 The guide distinguishes declarative extensions from source/operator implementations that require Python code and tests. Domain expertise and calibration remain the implementer's responsibility.
 

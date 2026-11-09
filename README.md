@@ -4,15 +4,13 @@ Syntony is an event-driven control framework for adaptive reconfiguration across
 
 > An open-source implementation of Syntony, based on the architecture and instantiation guidelines described in the thesis ([Fazul, 2026](#how-to-cite)).
 
-The [default example instance](config/syntony_config.json) configures two domains for HTTP service recovery. The application domain observes the HTTP service, and the dependency domain tracks the availability of its external dependency. Syntony correlates these observations to select recovery actions.
-
 This repository builds on an earlier implementation developed during the doctoral research. Its commit history begins with the preparation of the public distribution.
 
-Adapt the instantiation to another system by selecting domains, metric sources, observed events, coordination patterns, policy guards and action handlers in the Specification Catalog. Extend the runtime when a new acquisition protocol or operator is needed. The control pipeline separates metric acquisition, local interpretation, event-time correlation, policy arbitration, concrete execution, and feedback:
+The control pipeline separates metric acquisition, local interpretation, event-time correlation, policy admission, execution and feedback.
 
 **Monitor → Event Composer → CEP → Coordinator → Executor → execution feedback**
 
-The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**. The repository includes module-specific Docker images and deployment examples for Grid’5000.
+The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**.
 
 For a guided path from setup to extension, see the [documentation index](docs/README.md).
 
@@ -52,9 +50,29 @@ The four main directories follow the repository organization described in the th
 | `runtime/` | [Runtime components](runtime/README.md) implement Monitor, Event Composer, CEP, Coordinator and Executor. The logical Internal state is persisted in Redis. |
 | `deployment/` | [Deployment artifacts](deployment/README.md) package and connect components for local Compose and Grid’5000. Each module's Dockerfile lives alongside its implementation. |
 
-The supplied instance selects application and dependency domains. It binds the Redis endpoint through `REDIS_URL` and uses the stream names defined in the [event contracts](docs/event-contracts.md). The root Compose file provides a launch entry point for the descriptors under `deployment/`.
+## Events, temporal semantics and feedback
+
+See [event contracts](docs/event-contracts.md) for stream names and payloads and [algorithm alignment](docs/algorithm-alignment.md) for the implementation/test mapping.
+
+The Composer compares a metric against the previous watermark minus the lateness tolerance, advances its watermark monotonically, and routes rejected metrics to `events:late`. Accepted observations are emitted before their corresponding watermark progress. The CEP uses the minimum watermark of all required domains and closes stable control rounds in order. A missing/idle required domain stalls progress; its watermark is not fabricated.
+
+CEP patterns support `count_event`, `same_tick_all`, `participants_all`, and `passthrough_event`. Use explicit participants for cross-domain correlation; `count_event` and `same_tick_all` also accept an optional single-domain filter. Coordination types are `E_trg`, `E_sync`, `E_block` and `E_unblock`, using the thesis notation. `E_block` activates a named action guard; `E_unblock` releases that guard. Action mappings and handlers reside in configuration. A missing handler emits `action_fail`; command failure and timeout are not converted into success.
+
+Execution feedback is an `E_fed` observation with `action_done`, `action_fail`, or `action_timeout`, action/ticket/coordination IDs, and handler verification details. Its event time is the actual completion/report time; the triggering round is retained separately. Shell interpolation is not implicit: handlers receive an `argv` array.
+
+## Configure and extend the Specification Catalog
+
+An instance configuration selects catalog packages, sets temporal parameters and binds the runtime to a target environment. The [Specification Catalog](specifications/README.md) organizes the reusable definitions into three layers. Domain packages define metric sources and local observation rules. Event packages define CEP correlation patterns. Policy packages map coordination events to actions and set their admission constraints.
+
+Includes resolve relative to the file that declares them. Objects merge recursively and lists concatenate. Conflicting scalar values are rejected. A declared parameter such as `${ENDPOINT}` can be set through the environment. Run `make validate` to check the assembled configuration and its references. [Catalog extension guide](docs/extending-the-catalog.md)
+
+**Meta-adaptation** lets Syntony change the policy that governs subsequent adaptations in response to observed conditions. The CEP activates a declared profile at a stable-round boundary and records the active version in its checkpoint. Changes to catalog definitions or CEP timing settings require a fresh Redis instance or a coordinated migration of the saved state and streams. [Meta-reconfiguration guide](docs/meta-reconfiguration.md) · [CEP recovery](docs/event-contracts.md#cep-recovery)
 
 ## Quick start
+
+The [default example instance](config/syntony_config.json) configures two domains for HTTP service recovery. The application domain observes the HTTP service, and the dependency domain tracks the availability of its external dependency. Syntony correlates these observations to select recovery actions.
+
+The [example catalog](specifications/README.md#supplied-examples) includes its domain definitions, correlation patterns and recovery policies. The optional [meta-adaptation example](docs/meta-reconfiguration.md#run-the-example) switches to a fallback profile on dependency failure and returns to the normal profile on recovery.
 
 Requirements: Docker Engine running, Docker Compose 2.20+ (the root file uses `include`), and Python 3.11+ for host-side validation and demonstrations. Run the following commands from this repository's root:
 
@@ -145,33 +163,6 @@ The [monitor guide](deployment/examples/monitors/README.md) includes runnable co
 The optional [host-guard instance](config/service-resilience-host-guard.json) adds host-load observations to the service recovery example and temporarily blocks restarts during host pressure. See [instance configurations](config/README.md) for the supplied profiles.
 
 For multimetric rules, windows and recovery sequences, see the [Composer examples](config/examples/README.md#composer-examples).
-
-## Configure and extend the Specification Catalog
-
-The HTTP service recovery instance is a working example of the Specification Catalog. Its [instance configuration](config/syntony_config.json) loads the application and dependency domain packages, the CEP patterns that correlate their observations, and the policies that map those patterns to recovery actions. [Domain package](specifications/domains/application_service.json) · [CEP patterns](specifications/events/service_resilience.json) · [Recovery policies](specifications/policies/service_resilience.json)
-
-The [specification packages README](specifications/README.md) explains which files are examples, how they are selected, and how identifiers connect across them. For step-by-step changes, use [docs/extending-the-catalog.md](docs/extending-the-catalog.md). It provides a complete OS-domain instance and explains how to add sources, local events, patterns, policies, action handlers and new operators.
-
-- `config/syntony_config.json` selects reusable JSON packages through `includes` and declares timing/binding parameters.
-- `specifications/domains/*.json` defines domain-local monitor sources and Composer rules.
-- `specifications/events/*.json` defines CEP patterns, required/prohibited participants and coordination events.
-- `specifications/policies/*.json` maps pattern names to real executor actions and declares handlers/deduplication.
-
-Includes are relative to the containing file. Objects merge recursively, lists concatenate, and conflicting scalar values are rejected. Create a specialized package rather than relying on silent override precedence. `${NAME}` resolves a declared parameter, optionally supplied through an environment variable. Runtime processes load one validated catalog at startup. Changes to catalog definitions or CEP timing settings require a fresh Redis instance or a coordinated migration of the saved state and streams. See [CEP recovery](docs/event-contracts.md#cep-recovery).
-
-**Meta-adaptation** lets Syntony change the policy that governs subsequent adaptations in response to observed conditions. In the supplied example, a dependency outage requests the fallback profile, and recovery requests a return to the normal profile. The CEP activates each profile at a stable-round boundary and records the active version in its checkpoint. [Meta-reconfiguration guide](docs/meta-reconfiguration.md)
-
-`make validate` rejects unsupported sources, unknown metrics/events/actions/domains, duplicate patterns, invalid windows and missing policy mappings. Adding a new real source protocol or rule operator requires an implementation and tests as well as configuration; JSON alone does not create a connector.
-
-## Events, temporal semantics and feedback
-
-See [event contracts](docs/event-contracts.md) for stream names and payloads and [algorithm alignment](docs/algorithm-alignment.md) for the implementation/test mapping.
-
-The Composer compares a metric against the previous watermark minus the lateness tolerance, advances its watermark monotonically, and routes rejected metrics to `events:late`. Accepted observations are emitted before their corresponding watermark progress. The CEP uses the minimum watermark of all required domains and closes stable control rounds in order. A missing/idle required domain stalls progress; its watermark is not fabricated.
-
-CEP patterns support `count_event`, `same_tick_all`, `participants_all`, and `passthrough_event`. Use explicit participants for cross-domain correlation; `count_event` and `same_tick_all` also accept an optional single-domain filter. Coordination types are `E_trg`, `E_sync`, `E_block` and `E_unblock`, using the thesis notation. `E_block` activates a named action guard; `E_unblock` releases that guard. Action mappings and handlers reside in configuration. A missing handler emits `action_fail`; command failure and timeout are not converted into success.
-
-Execution feedback is an `E_fed` observation with `action_done`, `action_fail`, or `action_timeout`, action/ticket/coordination IDs, and handler verification details. Its event time is the actual completion/report time; the triggering round is retained separately. Shell interpolation is not implicit: handlers receive an `argv` array.
 
 ## Useful operational scripts
 
