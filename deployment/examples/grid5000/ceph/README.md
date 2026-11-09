@@ -1,4 +1,4 @@
-# Six-node Ceph and Syntony deployment
+# Six-node Ceph and Syntony deployment example
 
 This example deploys a six-node Ceph cluster with per-host Ceph configuration, explicit physical roles, SSH/rsync distribution, build/export/fan-out/import of Docker images, ordered startup, three-monitor quorum checks and three-OSD health checks.
 
@@ -83,9 +83,9 @@ Replace both NODE1 occurrences with the fully qualified node 1 hostname. This ve
 
 ## Optional native Ceph probe
 
-`probe.py` is an optional librados read-latency collector. It reads object `probe` in pool `kv-probe`; the deployment does not generate payload data or start this collector automatically. To use it, create that pool with an appropriate RGW-independent RADOS application flag, upload an actual operator-provided file as `probe`, and execute the script in the MON container where librados and Ceph configuration are available. The script is mounted at `/experiment/native_probe.py`.
+`probe.py` is an optional librados read-latency collector. It reads object `probe` in pool `kv-probe`; the deployment does not generate payload data or start this collector automatically. To use it, create that pool with an appropriate RGW-independent RADOS application flag, upload an actual operator-provided file as `probe`, and execute the script in the MON container where librados and Ceph configuration are available. The script is mounted at `/opt/syntony/examples/ceph/probe.py`.
 
-A missing pool/object is reported as an error, not replaced by random latency. Record the actual data size and source when using this measurement. It is not a complete Ceph Monitor adapter for Syntony; add a real collector binding and event definitions through the Specification Catalog for that purpose.
+The probe reports an error if the pool or object is missing. To use its output in Syntony, configure a metric source and observed events in the Specification Catalog.
 
 ## Stop and state lifecycle
 

@@ -1,6 +1,6 @@
 # Grid’5000 deployment examples
 
-This directory provides deployment workflows for reserved Grid’5000 nodes. It includes source distribution, image distribution, per-host configuration, Ceph startup and checks, and Syntony placement.
+These examples show how to deploy Syntony on reserved Grid’5000 nodes. They cover source and image distribution, per-host configuration and service checks.
 
 Choose the example that matches the intended topology:
 
@@ -63,11 +63,11 @@ Replace the registry/organization/version with your actual published images. `{m
 
 The one-node OAR [job.sh](job.sh) is a template for environment provisioning and deployment. Configure `SYNTONY_SOURCE_DIR`, `SYNTONY_IMAGE` (including `{module}`), `GRID_ENVIRONMENT` and optional `SYNTONY_PROFILE`. It requires an environment that already supplies Docker/Compose. OAR resources and environment names must be selected for the current site. Do not use a previous reservation's inventory.
 
-## Six-node Ceph/Syntony deployment
+## Optional six-node deployment example
 
 Follow [ceph/README.md](ceph/README.md) for topology, image fan-out, collocated versus distributed Syntony placement, start ordering and health checks. Unlike the simple profile, it can build images on a reserved node without publishing them to a registry.
 
-A Ceph cluster and a Syntony control policy are separate assets. The supplied HTTP application remains the functional reference instance; deployment of Ceph does not automatically turn its metrics into Syntony events or make the HTTP restart handler a Ceph reconfiguration handler. Supply real Ceph bindings through the catalog for that integration.
+The example deploys a Ceph cluster alongside the Syntony HTTP recovery instance. See the example guide for cluster health checks and application recovery verification.
 
 ## Operating scope
 

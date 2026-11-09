@@ -17,7 +17,7 @@ The guide distinguishes declarative extensions from source/operator implementati
 
 ## Deploy on reserved infrastructure
 
-Read the [Grid’5000 overview](../deployment/examples/grid5000/README.md), then select the compact Syntony/CEP profile or the [six-node Ceph/Syntony workflow](../deployment/examples/grid5000/ceph/README.md). Generated descriptors and offline checks are preparation; they are not a substitute for a live reservation test.
+Read the [Grid’5000 overview](../deployment/examples/grid5000/README.md), then select the compact Syntony/CEP profile or the [six-node Ceph/Syntony deployment example](../deployment/examples/grid5000/ceph/README.md). Generated descriptors and offline checks are preparation; they are not a substitute for a live reservation test.
 
 ## Review and contribute
 

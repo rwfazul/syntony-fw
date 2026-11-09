@@ -10,7 +10,7 @@ Adapt the instantiation to another system by selecting domains, metric sources, 
 
 **Monitor → Event Composer → CEP → Coordinator → Executor → execution feedback**
 
-The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**. This repository includes a working HTTP/process recovery example, module-specific Docker images, and deployment utilities for Grid’5000 and Ceph.
+The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**. This repository includes a working HTTP/process recovery example, module-specific Docker images, and deployment examples for Grid’5000.
 
 For a guided path from setup to extension, see the [documentation index](docs/README.md).
 
@@ -33,7 +33,7 @@ scripts/                        source bundling, local integration, stream inspe
 deployment/
   examples/local/               full local Compose and real managed application
   examples/monitors/            real command, HTTP and OS acquisition examples
-  examples/grid5000/            single-node profiles and six-node Ceph and Syntony tools
+  examples/grid5000/            single-node and six-node deployment examples
   docker/                       optional all-module toolbox image
 docs/                           extension guide, event contracts and implementation guide
 tests/                          runtime, HTTP/process and offline deployment tests
@@ -155,7 +155,9 @@ The [specification packages README](specifications/README.md) explains which fil
 - `specifications/events/*.json` defines CEP patterns, required/prohibited participants and coordination events.
 - `specifications/policies/*.json` maps pattern names to real executor actions and declares handlers/deduplication.
 
-Includes are relative to the containing file. Objects merge recursively, lists concatenate, and conflicting scalar values are rejected. Create a specialized package rather than relying on silent override precedence. `${NAME}` resolves a declared parameter, optionally supplied through an environment variable. Runtime processes load one validated catalog at startup. [Meta-reconfiguration](docs/meta-reconfiguration.md) switches between declared profiles during execution. Changes to catalog definitions or CEP timing settings require a fresh Redis instance or a coordinated migration of the saved state and streams. See [CEP recovery](docs/event-contracts.md#cep-recovery).
+Includes are relative to the containing file. Objects merge recursively, lists concatenate, and conflicting scalar values are rejected. Create a specialized package rather than relying on silent override precedence. `${NAME}` resolves a declared parameter, optionally supplied through an environment variable. Runtime processes load one validated catalog at startup. Changes to catalog definitions or CEP timing settings require a fresh Redis instance or a coordinated migration of the saved state and streams. See [CEP recovery](docs/event-contracts.md#cep-recovery).
+
+**Meta-adaptation** lets Syntony change the policy that governs subsequent adaptations in response to observed conditions. In the supplied example, a dependency outage requests the fallback profile, and recovery requests a return to the normal profile. The CEP activates each profile at a stable-round boundary and records the active version in its checkpoint. [Meta-reconfiguration guide](docs/meta-reconfiguration.md)
 
 `make validate` rejects unsupported sources, unknown metrics/events/actions/domains, duplicate patterns, invalid windows and missing policy mappings. Adding a new real source protocol or rule operator requires an implementation and tests as well as configuration; JSON alone does not create a connector.
 
@@ -177,7 +179,6 @@ Execution feedback is an `E_fed` observation with `action_done`, `action_fail`, 
 | `python scripts/bundle.py --output dist/syntony-fw.tar.gz` | Package Syntony sources with SHA-256 manifests for transfer |
 | `python scripts/inspect_streams.py --redis-url redis://HOST:6379/0` | Inspect counts and recent real event envelopes |
 | `python deployment/examples/grid5000/deploy.py --help` | Prepare/deploy/check the one-node Syntony or CEP profile |
-| `python deployment/examples/grid5000/ceph/cluster.py --help` | Prepare/sync/distribute images/start/check the six-node Ceph/Syntony topology |
 
 `make integration` refuses to replace an already-running instance. It opens real HTTP ports and uses Docker; invoke it explicitly. Tests include actual HTTP/process checks, isolated Redis transactions for admission and recovery, and storage doubles for individual temporal rules.
 

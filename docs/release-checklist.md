@@ -4,15 +4,14 @@
 
 - Install development dependencies and a local `redis-server` executable.
 - Run `make validate hygiene lint format-check test compose-check`.
-- Validate the host-guard configuration and Compose override described in the catalog guide.
+- Validate the example instance configurations and their Compose overrides.
 - Build the module images and run `make integration` against a fresh local instance.
 - Check failure, timeout and verified recovery when changing an action adapter.
 
 ## Verify deployment assets
 
 - Build a source bundle and check its SHA-256 manifests.
-- Check the generated Grid topology in the intended reservation, including node identity, network bindings, image architecture and availability.
-- Verify Ceph quorum and OSD health when using the Ceph example, then observe actual Syntony streams and the intended adaptation.
+- For the Syntony recovery example, verify that the service recovers and that the Executor publishes the corresponding feedback.
 - Review adapter idempotency, authentication, state retention and resource limits for the selected environment.
 
 ## Prepare a release

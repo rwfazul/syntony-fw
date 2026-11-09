@@ -101,7 +101,7 @@ rgw log http headers = http_x_experiment_request
                 f"{REMOTE}/state/{data}:/ceph",
                 f"{REMOTE}/generated/ceph.conf:/ceph/ceph.conf:ro",
                 f"{REMOTE}/source/deployment/examples/grid5000/ceph:/grid:ro",
-                f"{REMOTE}/source/deployment/examples/grid5000/ceph/probe.py:/experiment/native_probe.py:ro",
+                f"{REMOTE}/source/deployment/examples/grid5000/ceph/probe.py:/opt/syntony/examples/ceph/probe.py:ro",
             ],
             environment=dict(
                 FSID=fsid, MON_A=ips[storage[0]], MON_B=ips[storage[1]], MON_C=ips[storage[2]]
