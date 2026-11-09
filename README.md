@@ -1,8 +1,10 @@
 # Syntony
 
+Syntony is an event-driven control framework for adaptive reconfiguration across domains in data-intensive systems. It correlates observations from multiple domains in event time and uses policies to decide when to act.
+
 > An open-source implementation of Syntony, based on the architecture and instantiation guidelines described in the thesis ([Fazul, 2026](#how-to-cite)).
 
-The `syntony-fw` repository instantiates Syntony for HTTP service recovery across application and dependency domains.
+The [default example instance](config/syntony_config.json) configures two domains for HTTP service recovery. The application domain observes the HTTP service, and the dependency domain tracks the availability of its external dependency. Syntony correlates these observations to select recovery actions.
 
 This repository builds on an earlier implementation developed during the doctoral research. Its commit history begins with the preparation of the public distribution.
 
@@ -10,7 +12,7 @@ Adapt the instantiation to another system by selecting domains, metric sources, 
 
 **Monitor → Event Composer → CEP → Coordinator → Executor → execution feedback**
 
-The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**. This repository includes a working HTTP/process recovery example, module-specific Docker images, and deployment examples for Grid’5000.
+The implementation uses Redis Streams. Domain knowledge is configured through a local **Specification Catalog**. The repository includes module-specific Docker images and deployment examples for Grid’5000.
 
 For a guided path from setup to extension, see the [documentation index](docs/README.md).
 
@@ -124,7 +126,7 @@ from runtime.coordinator import map_to_actions
 from runtime.executor import process_executor_command
 ```
 
-The CLI starts the configured module:
+These CLI commands start the modules for the HTTP recovery example:
 
 ```bash
 python -m runtime monitor --domain application_service
@@ -134,7 +136,7 @@ python -m runtime coordinator
 python -m runtime executor
 ```
 
-Outside Docker, set `REDIS_URL` and an accessible `GATEWAY_URL`. Outside the checkout, supply `--config /absolute/path/syntony_config.json`; instance configuration and the catalog are deployment assets, not Python wheel defaults.
+Outside Docker, set `REDIS_URL` to the Redis endpoint. If you run the HTTP recovery example, also set `GATEWAY_URL` to the address of its gateway. When running from outside the checkout, pass `--config /absolute/path/to/instance.json` to select your instance configuration.
 
 ## Monitor examples
 
@@ -198,7 +200,7 @@ No Grid allocation or live deployment is performed by `prepare`. Build and run o
 
 Policies declare domain-qualified boolean flags, admission guards, flags to set on dispatch, deadlines and an exclusivity class. Admission reserves the complete plan and enqueues its commands atomically in Redis. Executor outcomes apply `on_success`, `on_failure`, `on_timeout` or `on_uncertain` effects once per action. Timeout or uncertain execution retains the exclusive reservation; a successful recovery handler must report `{"verified": true}` before it can release it.
 
-The default catalog includes these mechanisms and a read-only `VERIFY_LOCAL_SERVICE` recovery action. See [state and policy configuration](docs/state-and-policies.md) for the complete contract and examples.
+The HTTP recovery example demonstrates these mechanisms with a read-only `VERIFY_LOCAL_SERVICE` recovery action. See [state and policy configuration](docs/state-and-policies.md) for the complete contract and examples.
 
 ## State and supported operating model
 

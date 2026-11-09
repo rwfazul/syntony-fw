@@ -4,7 +4,7 @@ An instance configuration selects catalog packages and sets timing, required wat
 
 | File | Purpose | How to run |
 |---|---|---|
-| `syntony_config.json` | HTTP service recovery across application and dependency domains | `make up` |
+| `syntony_config.json` | Default example for HTTP service recovery across application and dependency domains | `make up` |
 | `service-resilience-host-guard.json` | The same application with an extra host-load domain that temporarily blocks restarts during host pressure | Use the host-guard Compose override in the catalog guide |
 | `service-resilience-filesystem-guard.json` | Guard restarts using observed filesystem capacity | [Filesystem guard example](../docs/extending-the-catalog.md#compose-a-filesystem-guard) |
 | `service-resilience-meta.json` | Switch policy profiles in response to dependency health | [Meta-reconfiguration example](../docs/meta-reconfiguration.md) |

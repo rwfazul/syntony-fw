@@ -50,6 +50,6 @@ The demonstration warms the actual response cache, terminates the local child pr
 
 ## Policy state and recovery
 
-The default catalog reserves `service_reconfiguration` while a service-changing plan runs. Known failure sets a recovery-needed guard; timeout or interrupted execution additionally retains exclusivity and uncertain state. Availability observations can trigger `VERIFY_LOCAL_SERVICE`, whose real health check must succeed before the guard is cleared. See [policy state and recovery](../../../docs/state-and-policies.md) for transitions and configuration.
+The HTTP recovery example reserves `service_reconfiguration` while a service-changing plan runs. Known failure sets a recovery-needed guard; timeout or interrupted execution additionally retains exclusivity and uncertain state. Availability observations can trigger `VERIFY_LOCAL_SERVICE`, whose real health check must succeed before the guard is cleared. See [policy state and recovery](../../../docs/state-and-policies.md) for transitions and configuration.
 
 For the optional host-pressure guard, use `config/service-resilience-host-guard.json` and `host-guard.compose.json` as described in the [catalog guide](../../../docs/extending-the-catalog.md).

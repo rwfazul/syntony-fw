@@ -2,7 +2,7 @@
 
 This example deploys a six-node Ceph cluster with per-host Ceph configuration, explicit physical roles, SSH/rsync distribution, build/export/fan-out/import of Docker images, ordered startup, three-monitor quorum checks and three-OSD health checks.
 
-Syntony runs the HTTP/process recovery instantiation. To control Ceph, configure metric sources, events and action handlers for the Ceph interfaces used by your deployment.
+This deployment example runs the HTTP service recovery instance alongside Ceph. To control Ceph, configure metric sources, events and action handlers for the Ceph interfaces used by your deployment.
 
 ## Topology
 

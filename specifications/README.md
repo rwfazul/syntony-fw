@@ -29,7 +29,7 @@ The runtime implements the operators used by these declarations. Adding JSON doe
 
 Only packages referenced by an instance configuration are loaded. Placing a JSON file here does not activate it automatically.
 
-The default instance is selected by [config/syntony_config.json](../config/syntony_config.json). The optional [config/service-resilience-host-guard.json](../config/service-resilience-host-guard.json) includes that instance, the OS domain and the host-pressure guard. It also adds the OS domain to the required watermark set.
+The default HTTP recovery example is selected by [config/syntony_config.json](../config/syntony_config.json). The optional [config/service-resilience-host-guard.json](../config/service-resilience-host-guard.json) includes that instance, the OS domain and the host-pressure guard. It also adds the OS domain to the required watermark set.
 
 ```bash
 python -m runtime validate --config config/syntony_config.json
