@@ -4,6 +4,8 @@
 
 The `syntony-fw` repository instantiates Syntony for HTTP service recovery across application and dependency domains.
 
+This repository builds on an earlier implementation developed during the doctoral research. Its commit history begins with the preparation of the public distribution.
+
 Adapt the instantiation to another system by selecting domains, metric sources, observed events, coordination patterns, policy guards and action handlers in the Specification Catalog. Extend the runtime when a new acquisition protocol or operator is needed. The control pipeline separates metric acquisition, local interpretation, event-time correlation, policy arbitration, concrete execution, and feedback:
 
 **Monitor → Event Composer → CEP → Coordinator → Executor → execution feedback**
