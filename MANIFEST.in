@@ -1,0 +1,19 @@
+include README.md CITATION.bib LICENSE CONTRIBUTING.md AGENTS.md Makefile docker-compose.yml
+include .dockerignore .gitignore
+recursive-include config *.json *.md
+recursive-include specifications *.json *.md
+recursive-include deployment *.py *.sh *.json *.cfg *.md Dockerfile Dockerfile.ceph
+recursive-include runtime *.md Dockerfile requirements.txt
+recursive-include scripts *.py *.md
+recursive-include docs *.md *.json
+recursive-include .github *.yml
+recursive-include tests *.py *.md
+prune generated
+prune dist
+prune build
+global-exclude *.pyc .DS_Store .env .env.*
+
+prune .local
+
+prune .ruff_cache
+prune .pytest_cache
