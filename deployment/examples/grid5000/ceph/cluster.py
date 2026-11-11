@@ -118,7 +118,7 @@ def proxy_health(inv):
     return info
 
 
-def syntony(inv, host, *args):
+def syntony(host, *args):
     """Run the Syntony Compose project assigned to one host."""
     return ssh(
         host,
@@ -377,14 +377,14 @@ def main():
         start_ceph(inv)
     elif args.action == "start-syntony":
         # Redis/application dependencies are started before remote consumers.
-        syntony(inv, inv["app"], "up", "-d", "--wait", "--wait-timeout", "120")
+        syntony(inv["app"], "up", "-d", "--wait", "--wait-timeout", "120")
         for host in inv["syntony_hosts"]:
             if host != inv["app"]:
-                syntony(inv, host, "up", "-d", "--wait", "--wait-timeout", "120")
+                syntony(host, "up", "-d", "--wait", "--wait-timeout", "120")
     elif args.action == "check":
         report = {"ceph": health(inv), "proxy": proxy_health(inv), "syntony": {}}
         for host in inv["syntony_hosts"]:
-            state = syntony(inv, host, "ps", "--all", "--format", "json")
+            state = syntony(host, "ps", "--all", "--format", "json")
             rows = (
                 json.loads(state)
                 if state.lstrip().startswith("[")
@@ -397,7 +397,6 @@ def main():
                 raise RuntimeError("Syntony services are missing or stopped: " + host)
             report["syntony"][host] = rows
         ping = syntony(
-            inv,
             inv["app"],
             "exec",
             "-T",
@@ -412,12 +411,12 @@ def main():
         print(json.dumps(report, indent=2))
     elif args.action == "logs":
         for host in inv["syntony_hosts"]:
-            print(syntony(inv, host, "logs", "--tail", "100"))
+            print(syntony(host, "logs", "--tail", "100"))
         for host in inv["nodes"]:
             print(compose(host, "logs", "--tail", "100"))
     else:
         for host in inv["syntony_hosts"]:
-            syntony(inv, host, "stop")
+            syntony(host, "stop")
         for host in inv["nodes"]:
             compose(host, "stop")
         # Keep files, volumes and block-file state. Never format physical disks.

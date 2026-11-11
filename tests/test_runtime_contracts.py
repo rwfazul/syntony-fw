@@ -252,7 +252,7 @@ class StreamProcessingAndDocumentationTests(unittest.TestCase):
             def execute(self):
                 pass
 
-            def xread(self, *args, **kwargs):
+            def xread(self, *_args, **_kwargs):
                 if self.read:
                     raise StopLoop()
                 self.read = True
