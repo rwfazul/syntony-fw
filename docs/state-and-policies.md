@@ -130,7 +130,9 @@ from runtime.internal_state import get_flags
 flags = get_flags(get_redis_client())
 ```
 
-`control:flags` stores domain-qualified values, `control:plans` stores admitted plans and completion status, `control:exclusive` maps classes to owning tickets, and `control:outcomes` records applied transitions. Coordinator decision records distinguish `state_guard`, `exclusivity`, `policy_constraint`, `dispatched` and `already_dispatched`.
+`control:flags` stores domain-qualified values. `control:previous_flags` stores each flag’s value before its last committed dispatch/outcome assignment for `prev` expressions. Both values are updated in the same transaction. `get_flag_context` reads a coherent current/previous snapshot.
+
+`control:plans` stores admitted plans and completion status, `control:exclusive` maps classes to owning tickets, and `control:outcomes` records applied transitions. Coordinator decision records distinguish `state_guard`, `exclusivity`, `policy_constraint`, `dispatched` and `already_dispatched`.
 
 Use one Coordinator and one Executor for each instance. Keep Redis state and configuration consistent across restarts. Plan/result records have no automatic expiry: define backup and retention procedures that preserve idempotency and unresolved reservations. The CEP checkpoints its Round Table and input cursors separately. The Composer retains its working history in memory.
 

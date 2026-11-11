@@ -21,6 +21,12 @@ This is a traceability map, not a formal equivalence proof. Clock-resynchronizat
 
 The [operator map](specification-operators.md) covers every operator in the thesis notation, its catalog representation and implementation limits.
 
+`tests/test_specification_operators.py` covers nested Boolean expressions,
+bounded historical windows, empty-round absence, obligation deadlines,
+maintenance-until conditions, overlapping obligations, snapshot recovery and
+profile cancellation. Redis tests in `tests/test_control_state.py` exercise
+atomic previous-flag updates and process restart with pending obligations.
+
 ## Contract tests
 
 `tests/test_runtime_contracts.py` checks closing-round identity and stable provenance, domain-qualified counts, bounded absolute-time startup, invalid event envelopes, numeric/count/boolean configuration types, frozen per-process configuration, OAR reservation identity, and refusal to overwrite another Ceph FSID. These cases supplement the initial algorithm tests and exercise the implementation's stated contracts.

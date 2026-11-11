@@ -81,6 +81,8 @@ It selects the normal HTTP application plus the OS package and a guard pattern. 
 
 The Coordinator records a bounded lease that blocks the existing restart action while the guard applies. The shipped package also defines `host_load_normal` and an `E_unblock` pattern sharing `block_id: host_pressure`. A normal-load observation releases that named guard. See [event contracts](event-contracts.md#blocking-and-release) for identity and replay semantics. This pattern does not require a new Executor handler: it configures arbitration. Repeated observations can renew the lease. Enabling the example can intentionally delay or suppress the restart demonstration; choose its threshold and run the recovery demo on the default configuration when checking the unguarded path.
 
+Optional `expression` and `obligation` patterns add nested Boolean and bounded temporal rules. See the [operator syntax and runnable example](specification-operators.md#expression-syntax).
+
 For the thesis notation and the scope of each logical/temporal operator, see the [specification operator map](specification-operators.md). Use `same_round_all` for named events in one stable round; `same_tick_all` is its compatibility alias.
 
 For multiple domains use `participants_all`, with explicit `domain`/`event_type` pairs and `within_rounds`. `forbidden_participants` uses the same event-time window to veto a match. `where` checks equality on event fields. The largest `within_rounds` must fit `cep.round.retention_rounds`. Required domains must actually have active observation/watermark producers; adding a name to configuration alone does not start its services.

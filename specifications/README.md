@@ -34,6 +34,8 @@ The instance configuration loads packages through `includes` and sets parameters
 
 ## Supplied examples
 
+The [temporal operator instance](../config/service-resilience-operators.json) adds Boolean expressions and bounded obligations to the HTTP recovery configuration. Its [operator guide](../docs/specification-operators.md#runnable-catalog-example) explains the guard and release behavior.
+
 The default configuration selects HTTP service recovery across an application domain and its external dependency. [Default example configuration](../config/syntony_config.json)
 
 | Package | Role | Selection |

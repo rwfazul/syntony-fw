@@ -21,7 +21,7 @@ Public interface: `WatermarkManager`, `match_rule`, `get_ruleset`, `composer_loo
 
 ## CEP
 
-Public interface: `compile_pattern`, `effective_watermark`, `close_stable_rounds`, `cep_loop`. Configuration: `cep.patterns`, `watermark_domains`, control-round length and retention. It correlates events only when the minimum required-domain watermark closes a stable round, with a separately configured exception for force-enabled administrative patterns. Its input is observations plus watermark progress, not raw system metrics. The isolated deployment needs real upstream producers.
+Public interface: `compile_pattern`, `compile_expression`, `OperatorRuntime`, `effective_watermark`, `close_stable_rounds`, `cep_loop`. Configuration: `cep.patterns`, `watermark_domains`, control-round length and retention. It correlates events only when the minimum required-domain watermark closes a stable round, with a separately configured exception for force-enabled administrative patterns. Optional `expression` and `obligation` patterns use `OperatorRuntime` for bounded temporal evaluation and checkpointed obligations. [Specification operators](specification-operators.md) describes their syntax and state context. Its input is observations plus watermark progress, not raw system metrics. The isolated deployment needs real upstream producers.
 
 ## Coordinator
 
@@ -33,4 +33,4 @@ Public interface: `apply_action`, `process_executor_command`, `executor_loop`. C
 
 ## Internal state
 
-`get_coordinator_state` and `get_execution_state` expose their respective records. `get_flag` and `get_flags` expose declared boolean policy state; `control.py` owns atomic admission, exclusive plans and outcome transitions. The implementation owners remain the Coordinator/Executor helpers. Redis also holds pending commands, leases, deduplication and execution results. This logical layer does not create a sixth daemon or make in-memory temporal context a coordinated checkpoint.
+`get_coordinator_state` and `get_execution_state` expose their respective records. `get_flag` and `get_flags` expose declared boolean policy state; `get_flag_context` reads current and previous flags atomically; `control.py` owns atomic admission, exclusive plans and outcome transitions. The implementation owners remain the Coordinator/Executor helpers. Redis also holds pending commands, leases, deduplication and execution results. This logical layer does not create a sixth daemon or make in-memory temporal context a coordinated checkpoint.

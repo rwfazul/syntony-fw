@@ -5,6 +5,7 @@ Run `make test` from the repository root after installing `.[dev]`. Install `red
 | File | Coverage |
 |---|---|
 | `test_runtime.py` | Catalog validation, watermark admission, local rules, stable correlation, command execution and feedback |
+| `test_specification_operators.py` | Boolean expressions, bounded historical windows, prospective obligations, until conditions, snapshot recovery and profile cancellation |
 | `test_runtime_contracts.py` | Event envelopes, temporal boundaries, configuration snapshots, documentation and reservation identity |
 | `test_control_state.py` | Atomic admission, exclusive plans, configured state transitions, blocking/release and actual Redis/HTTP process recovery |
 | `test_application_and_grid.py` | HTTP/process adapters, monitor examples and compact Grid deployment profiles |
@@ -26,5 +27,7 @@ python -m unittest discover -s tests -p test_control_state.py -v
 | Domain isolation | A domain-scoped lease blocks one domain's restart plan. Another domain dispatches the same action type while the lease is active. The blocked plan can dispatch after explicit release. |
 | Exclusivity | Concurrent plans compete for the same exclusive class. A single plan dispatches, and its reservation remains held until all its actions finish. |
 | Feedback | The Executor emits success, failure and timeout observations. The CEP converts each feedback subtype into a matching follow-up intent after the corresponding round becomes stable. |
+| Temporal obligations | Pending obligations survive a CEP restart. Expiry in a later empty round is recorded once alongside the Round Table checkpoint. |
+| Previous state | Atomic dispatch and outcome transitions retain each flag's prior value, including idempotent outcome replay. |
 
 The isolation scenario measures admission and dispatch under a domain-scoped lease. The thesis's queue consumption and throughput measurements belong to its separate workload scenario.

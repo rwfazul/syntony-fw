@@ -23,6 +23,7 @@ Redis Stream records carry a JSON envelope in the `data` field. Timestamps are f
 | `events:late` | Composer → inspection | Rejected metric with watermark/lateness context |
 | `clock:watermark` | Composer → CEP | `domain`, `watermark`, `max_event_time_seen`, delay and tolerance |
 | `clock:tick` | CEP → inspection | `tick`, `tick_start`, `tick_end`, `watermark` |
+| `events:temporal` | CEP → inspection | Obligation satisfaction, violation or profile-cancellation records |
 | `events:coord` | CEP → Coordinator | `coord_type`, `policy`, priority, participants, round boundaries and blocking metadata |
 | `executor:commands` | Coordinator → Executor | `type`, `domain`, `params`, `policy`, `action_id`, `ticket_id`, `coordination_event_id` |
 | `control:clock` | Composer → external operations | Clock-resynchronization request; not proof of clock adjustment |
@@ -36,6 +37,11 @@ External producers for the isolated CEP profile must publish actual observations
 Malformed metric envelopes (including non-finite timestamps/values), malformed observation envelopes and unknown CEP domains are diagnosed and skipped without advancing the temporal frontier. Domain qualification is checked against the configured producers. Invalid source timestamps are collection failures, not local-clock fallback.
 
 The `tick` in a coordination event names the round being evaluated, even if its supporting observation comes from retained history. Its provenance anchor is selected from matching, stable context; an event in an open future round cannot supply that anchor. For control rounds indexed from Unix time, startup begins at the earliest available input frontier rather than emitting empty closures since 1970.
+
+Expression decisions include `evaluation_context` with their stable round and
+use `base_event: round_evaluation` for the logical evaluation origin. Obligation
+coordination events also include `operator_result` with their resolution and
+trigger context. See [specification operators](specification-operators.md).
 
 ## CEP recovery
 

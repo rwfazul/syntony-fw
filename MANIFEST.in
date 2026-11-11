@@ -5,7 +5,7 @@ recursive-include specifications *.json *.md
 recursive-include deployment *.py *.sh *.json *.cfg *.md Dockerfile Dockerfile.ceph
 recursive-include runtime *.md Dockerfile requirements.txt
 recursive-include scripts *.py *.md
-recursive-include docs *.md *.json
+recursive-include docs *.md *.json *.png
 recursive-include .github *.yml
 recursive-include tests *.py *.md
 prune generated
