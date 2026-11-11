@@ -56,9 +56,11 @@ See [event contracts](docs/event-contracts.md) for stream names and payloads and
 
 The Composer compares a metric against the previous watermark minus the lateness tolerance, advances its watermark monotonically, and routes rejected metrics to `events:late`. Accepted observations are emitted before their corresponding watermark progress. The CEP uses the minimum watermark of all required domains and closes stable control rounds in order. A missing/idle required domain stalls progress; its watermark is not fabricated.
 
-CEP patterns support `count_event`, `same_tick_all`, `participants_all`, and `passthrough_event`. Use explicit participants for cross-domain correlation; `count_event` and `same_tick_all` also accept an optional single-domain filter. Coordination types are `E_trg`, `E_sync`, `E_block` and `E_unblock`, using the thesis notation. `E_block` activates a named action guard; `E_unblock` releases that guard. Action mappings and handlers reside in configuration. A missing handler emits `action_fail`; command failure and timeout are not converted into success.
+CEP patterns support `count_event`, `same_round_all`, `participants_all`, and `passthrough_event`. Use explicit participants for cross-domain correlation; `count_event` and `same_round_all` also accept an optional single-domain filter. Coordination types are `E_trg`, `E_sync`, `E_block` and `E_unblock`, using the thesis notation. `E_block` activates a named action guard; `E_unblock` releases that guard. Action mappings and handlers reside in configuration. A missing handler emits `action_fail`; command failure and timeout are not converted into success.
 
 Execution feedback is an `E_fed` observation with `action_done`, `action_fail`, or `action_timeout`, action/ticket/coordination IDs, and handler verification details. Its event time is the actual completion/report time; the triggering round is retained separately. Shell interpolation is not implicit: handlers receive an `argv` array.
+
+The [specification operator map](docs/specification-operators.md) relates the thesis notation to catalog rules, temporal patterns and state constraints.
 
 ## Configure and extend the Specification Catalog
 
@@ -179,9 +181,9 @@ For multimetric rules, windows and recovery sequences, see the [Composer example
 
 The [Grid deployment guide](deployment/examples/grid5000/README.md) distinguishes three cases:
 
-1. **Syntony on one node:** a compact full pipeline deployment with the real local application.
-2. **CEP on one node:** CEP plus Redis, awaiting real external observation/watermark producers.
-3. **Ceph and Syntony on six nodes:** an example that provisions a Ceph cluster alongside Syntony on reserved Grid’5000 nodes.
+1. **Syntony on one node:** deploy the complete control pipeline with the HTTP recovery example.
+2. **CEP component on one node:** deploy the correlation stage alongside an existing integration that supplies observations and domain watermarks. The [component guide](deployment/examples/grid5000/cep/README.md) explains how the other stages connect.
+3. **Managed system and Syntony across six nodes:** distribute the managed system and control components across reserved nodes. The supplied [multinode example](deployment/examples/grid5000/ceph/README.md) uses Ceph as example storage infrastructure and runs Syntony against the HTTP recovery application.
 
 The [Ceph deployment example](deployment/examples/grid5000/ceph/README.md) shows how to configure the nodes, distribute images and check cluster health. To use Syntony to manage Ceph, add Ceph metrics and action handlers to the Specification Catalog.
 

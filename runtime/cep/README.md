@@ -1,6 +1,6 @@
-# Cep module
+# CEP module
 
-See the [Cep interface and behavior](../../docs/modules.md) and [catalog extension guide](../../docs/extending-the-catalog.md).
+See the [CEP interface and behavior](../../docs/modules.md) and [catalog extension guide](../../docs/extending-the-catalog.md).
 
 Build from the repository root:
 

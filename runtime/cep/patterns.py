@@ -1,6 +1,7 @@
 """Compile event patterns and match domain-qualified participants in stable rounds."""
 
 from ..common import load_syntony_config
+from ..configuration import normalize_pattern_rounds
 
 
 def _matches_configured_fields(event, expected_fields):
@@ -16,13 +17,17 @@ def _matches_participant(event, participant):
 
 
 def _compile_pattern(pattern_cfg):
+    pattern_cfg = normalize_pattern_rounds(pattern_cfg)
     pattern_type = pattern_cfg.get("type")
 
     if pattern_type == "count_event":
 
         def match(events, round_table, tick, cfg=pattern_cfg):
-            min_tick = tick - cfg.get("within_ticks", 1) + 1
-            relevant = [event for event in events if min_tick <= event.get("tick", 0) <= tick]
+            round_index = tick
+            minimum_round = round_index - cfg.get("within_ticks", 1) + 1
+            relevant = [
+                event for event in events if minimum_round <= event.get("tick", 0) <= round_index
+            ]
             count = sum(
                 1
                 for event in relevant
@@ -31,22 +36,26 @@ def _compile_pattern(pattern_cfg):
                 and _matches_configured_fields(event, cfg.get("where", {}))
             )
             return count >= cfg["count"]
-    elif pattern_type == "same_tick_all":
+    elif pattern_type in ("same_round_all", "same_tick_all"):
 
         def match(events, round_table, tick, cfg=pattern_cfg):
+            round_index = tick
             types = {
                 event["event_type"]
-                for event in round_table.get(tick, [])
+                for event in round_table.get(round_index, [])
                 if cfg.get("domain") in (None, event.get("domain"))
             }
             return all(event_type in types for event_type in cfg.get("event_types", []))
     elif pattern_type == "participants_all":
 
         def match(events, round_table, tick, cfg=pattern_cfg):
-            within_ticks = max(1, int(cfg.get("within_ticks", 1)))
-            minimum_tick = tick - within_ticks + 1
+            round_index = tick
+            window_rounds = max(1, int(cfg.get("within_ticks", 1)))
+            minimum_round = round_index - window_rounds + 1
             relevant = [
-                event for event in events if minimum_tick <= event.get("tick", tick) <= tick
+                event
+                for event in events
+                if minimum_round <= event.get("tick", round_index) <= round_index
             ]
             # A prohibited participant vetoes the match within this stable window.
             if any(
@@ -55,13 +64,13 @@ def _compile_pattern(pattern_cfg):
                 for participant in cfg.get("forbidden_participants", [])
             ):
                 return False
-            current_tick = round_table.get(tick, [])
+            current_round = round_table.get(round_index, [])
             participants = cfg.get("participants", [])
             if not participants:
                 return False
             if cfg.get("require_current_tick", True) and not any(
                 _matches_participant(event, participant)
-                for event in current_tick
+                for event in current_round
                 for participant in participants
             ):
                 return False
@@ -72,15 +81,16 @@ def _compile_pattern(pattern_cfg):
     elif pattern_type == "passthrough_event":
 
         def match(events, round_table, tick, cfg=pattern_cfg):
-            tick_events = round_table.get(tick, [])
+            round_index = tick
+            round_events = round_table.get(round_index, [])
             expected_fields = cfg.get("where", {})
             required_event_types = set(cfg.get("requires_event_types", []))
-            available_event_types = {event["event_type"] for event in tick_events}
+            available_event_types = {event["event_type"] for event in round_events}
             return required_event_types.issubset(available_event_types) and any(
                 event["event_type"] == cfg["event_type"]
                 and cfg.get("domain") in (None, event.get("domain"))
                 and _matches_configured_fields(event, expected_fields)
-                for event in tick_events
+                for event in round_events
             )
     else:
         raise ValueError(f"Unsupported pattern type: {pattern_type}")

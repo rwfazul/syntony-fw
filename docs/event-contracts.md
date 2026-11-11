@@ -35,7 +35,7 @@ External producers for the isolated CEP profile must publish actual observations
 
 Malformed metric envelopes (including non-finite timestamps/values), malformed observation envelopes and unknown CEP domains are diagnosed and skipped without advancing the temporal frontier. Domain qualification is checked against the configured producers. Invalid source timestamps are collection failures, not local-clock fallback.
 
-The `tick` in a coordination event names the round being evaluated, even if its supporting observation comes from retained history. Its provenance anchor is selected from matching, stable context; an event in an open future round cannot supply that anchor. For absolute Unix-time ticks, startup begins at the earliest available input frontier rather than emitting empty closures since 1970.
+The `tick` in a coordination event names the round being evaluated, even if its supporting observation comes from retained history. Its provenance anchor is selected from matching, stable context; an event in an open future round cannot supply that anchor. For control rounds indexed from Unix time, startup begins at the earliest available input frontier rather than emitting empty closures since 1970.
 
 ## CEP recovery
 
@@ -43,7 +43,7 @@ The CEP keeps its working Round Table in memory and saves it to `syntony:cep:rou
 
 Use one CEP per Redis instance. The checkpoint records a digest of the CEP configuration. For changes to that configuration, start with a fresh Redis instance or explicitly manage migration of the checkpoint and streams together. An existing deployment upgraded from a version without a checkpoint starts by reading the retained input streams and can republish historical rounds during this initial replay.
 
-The Round Table and its checkpoint use round terminology. The `clock:tick` stream name, `tick*` envelope fields and existing JSON timing keys remain wire and configuration identifiers for compatibility.
+A control round is a window indexed in the Round Table. A clock tick signals progress as a stable round closes. Configuration uses `cep.round`, `retention_rounds`, `within_rounds` and `require_current_round`. Previous configuration names remain accepted aliases. The `clock:tick` stream and `tick*` envelope fields retain their published names. See [configuration aliases](specification-operators.md#configuration-aliases).
 
 For versioned policy activation and its feedback contract, see [meta-reconfiguration](meta-reconfiguration.md).
 

@@ -17,6 +17,10 @@ Tests live in `tests/test_runtime.py` and `tests/test_application_and_grid.py`. 
 
 This is a traceability map, not a formal equivalence proof. Clock-resynchronization execution is delegated to the operating environment. Coordinator/Executor pending delivery is not a coordinated checkpoint of the complete pipeline. No general distributed transaction, rollback, exactly-once side-effect guarantee or queue-source connector is claimed. Docker pipeline and live Grid validation must be reported separately from direct unit/HTTP tests and offline descriptor validation.
 
+## Specification operators
+
+The [operator map](specification-operators.md) covers every operator in the thesis notation, its catalog representation and implementation limits.
+
 ## Contract tests
 
 `tests/test_runtime_contracts.py` checks closing-round identity and stable provenance, domain-qualified counts, bounded absolute-time startup, invalid event envelopes, numeric/count/boolean configuration types, frozen per-process configuration, OAR reservation identity, and refusal to overwrite another Ceph FSID. These cases supplement the initial algorithm tests and exercise the implementation's stated contracts.

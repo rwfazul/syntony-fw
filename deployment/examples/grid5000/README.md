@@ -7,10 +7,10 @@ Choose the example that matches the intended topology:
 | Example | Tool | Physical placement |
 |---|---|---|
 | [Syntony](syntony/README.md) | `deploy.py --profile syntony` | All modules and the HTTP application on one reserved node |
-| [CEP only](cep/README.md) | `deploy.py --profile cep` | CEP and Redis on one node; real external producers required |
-| [Ceph and Syntony](ceph/README.md) | `ceph/cluster.py` | Three storage nodes, two RGW nodes and one application node; collocated or distributed Syntony |
+| [CEP component integration](cep/README.md) | `deploy.py --profile cep` | CEP and Redis on one node, connected to existing upstream and downstream components |
+| [Managed system and Syntony across six nodes](ceph/README.md) | `ceph/cluster.py` | Three storage nodes, two RGW nodes and one application node; collocated or distributed Syntony |
 
-The six-node example generates a Compose descriptor for each host and distributes the Syntony sources, configuration and container images to the reserved nodes.
+The supplied multinode example uses Ceph as example storage infrastructure and runs Syntony against the HTTP recovery application. It generates a Compose descriptor for each host and distributes the Syntony sources, configuration and container images to the reserved nodes.
 
 ## Files and entry points
 
@@ -63,7 +63,7 @@ Replace the registry/organization/version with your actual published images. `{m
 
 The one-node OAR [job.sh](job.sh) is a template for environment provisioning and deployment. Configure `SYNTONY_SOURCE_DIR`, `SYNTONY_IMAGE` (including `{module}`), `GRID_ENVIRONMENT` and optional `SYNTONY_PROFILE`. It requires an environment that already supplies Docker/Compose. OAR resources and environment names must be selected for the current site. Do not use a previous reservation's inventory.
 
-## Optional six-node deployment example
+## Multinode deployment with a managed system
 
 Follow [ceph/README.md](ceph/README.md) for topology, image fan-out, collocated versus distributed Syntony placement, start ordering and health checks. Unlike the simple profile, it can build images on a reserved node without publishing them to a registry.
 

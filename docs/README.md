@@ -11,6 +11,8 @@ Start with the [project README](../README.md), then follow the path that fits yo
 
 ## Extend Syntony
 
+Read the [specification operator map](specification-operators.md) to translate thesis notation into supported catalog declarations.
+
 Start with [the Specification Catalog](../specifications/README.md), then follow [the Specification Catalog guide](extending-the-catalog.md): select packages, add a domain, define events and policies, bind real handlers, start the corresponding producers, and validate the instance. The [monitor examples](../deployment/examples/monitors/README.md) cover real command, HTTP and OS acquisition. The host-pressure guard shows how to add a domain to a complete instance.
 
 The guide distinguishes declarative extensions from source/operator implementations that require Python code and tests. Domain expertise and calibration remain the implementer's responsibility.

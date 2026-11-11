@@ -8,6 +8,8 @@ The figure shows how reusable specifications become a Syntony instance. The
 domain labels illustrate possible integrations. See [supplied examples](#supplied-examples)
 for the configurations included in this repository.
 
+See the [specification operator map](../docs/specification-operators.md) for conjunction, disjunction, negation, same-round alignment and the scope of temporal operators.
+
 ## Specification layers
 
 - **Domains** define metric sources and Composer rules that turn local conditions into observed events.

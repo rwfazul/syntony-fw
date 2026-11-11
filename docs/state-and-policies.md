@@ -46,7 +46,7 @@ Admission checks state guards, exclusivity, deadlines, deduplication and applica
 
 Each plan has a `ticket_id`; each command has a distinct `action_id`. Preserve these identifiers when adapting an external executor. Commands within a plan are queued in declared order. Admission of the whole plan does not provide rollback or conditional cancellation of later commands after an earlier failure.
 
-`deadline_seconds` in a policy is measured from the coordination event's `timestamp`. A CEP pattern can also declare its own `deadline_seconds`, which becomes an absolute event deadline. When both apply, admission must satisfy both. The correlation window `within_ticks` is independent of the admission deadline. Deadlines govern dispatch, while handler `timeout_seconds` governs execution.
+`deadline_seconds` in a policy is measured from the coordination event's `timestamp`. A CEP pattern can also declare its own `deadline_seconds`, which becomes an absolute event deadline. When both apply, admission must satisfy both. The correlation window `within_rounds` is independent of the admission deadline. Deadlines govern dispatch, while handler `timeout_seconds` governs execution.
 
 State guards and exclusive reservations remain mandatory for `force_process` events. Force-processing can bypass temporal admission/deduplication and ordinary blocking leases; it does not authorize concurrent reconfiguration or clear uncertain state.
 

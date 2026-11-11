@@ -511,6 +511,15 @@ class ControlStateTests(unittest.TestCase):
 
             cep.kill()
             cep.wait(timeout=5)
+            migrated = copy.deepcopy(config)
+            cep_options = migrated["cep"]
+            cep_options["round"] = cep_options.pop("tick")
+            cep_options["round"]["retention_rounds"] = cep_options["round"].pop("retention_ticks")
+            cep_options["relative_round_origin"] = cep_options.pop("relative_tick_origin")
+            for pattern in cep_options["patterns"]:
+                if "within_ticks" in pattern:
+                    pattern["within_rounds"] = pattern.pop("within_ticks")
+            path.write_text(json.dumps(migrated))
             start("cep")
             old_request = rows(PROFILE_REQUESTS)[0]
             publish(PROFILE_REQUESTS, **old_request)

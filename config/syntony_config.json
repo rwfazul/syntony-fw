@@ -20,10 +20,10 @@
       "application_service",
       "external_dependency"
     ],
-    "relative_tick_origin": true,
-    "tick": {
+    "relative_round_origin": true,
+    "round": {
       "seconds": 1,
-      "retention_ticks": 8
+      "retention_rounds": 8
     }
   }
 }

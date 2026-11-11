@@ -45,6 +45,8 @@ python -m runtime validate --config config/syntony_config.json
 | `parameters` | Declares string bindings such as service URLs; matching environment variables supply deployment-specific values |
 | `timing` | Sets sampling interval, watermark delay and allowed lateness |
 | `cep.watermark_domains` | Lists domains whose watermarks must progress to close control rounds |
-| `cep.tick` | Sets control-round duration and retained history |
+| `cep.round` | Sets control-round duration and retained history |
+
+Use `cep.round.seconds` for round duration, `cep.round.retention_rounds` for retained rounds, and `cep.relative_round_origin` for the round origin. Pattern windows use `within_rounds` and `require_current_round`. Previous tick-based names remain accepted aliases. See [configuration aliases](../docs/specification-operators.md#configuration-aliases).
 
 Objects merge recursively, lists concatenate and conflicting scalar values are rejected. To change typed thresholds or timing values, select a specialized package/configuration. Processes load a validated snapshot at startup; restart the instance to activate configuration changes.

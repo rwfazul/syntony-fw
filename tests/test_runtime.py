@@ -113,6 +113,71 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate(config)
 
+    def test_same_round_pattern_validation_and_alias(self):
+        for pattern_type in ("same_round_all", "same_tick_all"):
+            with self.subTest(pattern_type=pattern_type):
+                config = copy.deepcopy(self.config)
+                pattern = config["cep"]["patterns"][0]
+                pattern["type"] = pattern_type
+                pattern["event_types"] = [pattern["participants"][0]["event_type"]]
+                validate(config)
+                pattern["event_types"] = []
+                with self.assertRaisesRegex(ValueError, "requires event types"):
+                    validate(config)
+
+    def test_round_configuration_aliases_preserve_persisted_identity(self):
+        config = copy.deepcopy(self.config)
+        cep = config["cep"]
+        cep["round"] = cep.pop("tick")
+        cep["round"]["retention_rounds"] = cep["round"].pop("retention_ticks")
+        cep["relative_round_origin"] = cep.pop("relative_tick_origin")
+        for pattern in cep["patterns"]:
+            if "within_ticks" in pattern:
+                pattern["within_rounds"] = pattern.pop("within_ticks")
+        self.assertEqual(validate(config), self.config)
+        self.assertIn("round", config["cep"])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "instance.json"
+            path.write_text(json.dumps(config))
+            self.assertEqual(load_syntony_config(path), self.config)
+
+    def test_round_alias_conflicts_and_invalid_types_rejected(self):
+        for field in ("round", "retention", "window", "current"):
+            config = copy.deepcopy(self.config)
+            cep = config["cep"]
+            pattern = cep["patterns"][0]
+            if field == "round":
+                cep["round"] = dict(seconds=999, retention_rounds=8)
+            elif field == "retention":
+                cep["tick"]["retention_rounds"] = 999
+            elif field == "window":
+                pattern["within_rounds"] = 999
+            else:
+                pattern.update(require_current_round=True, require_current_tick=False)
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Conflicting"):
+                validate(config)
+        for field, value in (("within_rounds", 1.5), ("require_current_round", 1)):
+            config = copy.deepcopy(self.config)
+            pattern = config["cep"]["patterns"][0]
+            pattern.pop("within_ticks", None)
+            pattern[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                validate(config)
+
+    def test_direct_pattern_compilation_accepts_round_window(self):
+        spec = dict(
+            name="history",
+            type="participants_all",
+            participants=[dict(domain="a", event_type="x")],
+            within_rounds=2,
+            require_current_round=False,
+            coord_type="E_trg",
+        )
+        pattern = _compile_pattern(spec)
+        rows = [dict(domain="a", event_type="x", tick=2)]
+        self.assertTrue(pattern["match"](rows, {2: rows}, tick=3))
+        self.assertFalse(pattern["match"](rows, {2: rows}, tick=4))
+
     def test_simulation_handler_rejected(self):
         config = copy.deepcopy(self.config)
         config["executor"]["actions"]["ENABLE_FALLBACK"]["mode"] = "simulate"
@@ -179,6 +244,27 @@ class TemporalTests(unittest.TestCase):
         close_stable_rounds(store, [pattern], {2: [future]}, 1, 8, 2, last)
         self.assertEqual(len(store.streams["clock:tick"]), 2)
         self.assertEqual(watermark_to_stable_round(102, 1, 100), 1)
+
+    def test_same_round_alignment_and_legacy_alias(self):
+        rows = [
+            dict(domain="a", event_type="x", tick=2),
+            dict(domain="a", event_type="y", tick=3),
+        ]
+        for pattern_type in ("same_round_all", "same_tick_all"):
+            with self.subTest(pattern_type=pattern_type):
+                spec = dict(
+                    name="aligned",
+                    type=pattern_type,
+                    domain="a",
+                    event_types=["x", "y"],
+                    coord_type="E_sync",
+                )
+                pattern = _compile_pattern(spec)
+                self.assertFalse(pattern["match"](rows, {2: [rows[0]], 3: [rows[1]]}, 3))
+                aligned = [dict(row, tick=3) for row in rows]
+                self.assertTrue(pattern["match"](aligned, {3: aligned}, 3))
+                wrong_domain = [aligned[0], dict(aligned[1], domain="b")]
+                self.assertFalse(pattern["match"](wrong_domain, {3: wrong_domain}, 3))
 
     def test_participants_and_negative_evidence(self):
         spec = dict(

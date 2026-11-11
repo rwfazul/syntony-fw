@@ -81,7 +81,9 @@ It selects the normal HTTP application plus the OS package and a guard pattern. 
 
 The Coordinator records a bounded lease that blocks the existing restart action while the guard applies. The shipped package also defines `host_load_normal` and an `E_unblock` pattern sharing `block_id: host_pressure`. A normal-load observation releases that named guard. See [event contracts](event-contracts.md#blocking-and-release) for identity and replay semantics. This pattern does not require a new Executor handler: it configures arbitration. Repeated observations can renew the lease. Enabling the example can intentionally delay or suppress the restart demonstration; choose its threshold and run the recovery demo on the default configuration when checking the unguarded path.
 
-For multiple domains use `participants_all`, with explicit `domain`/`event_type` pairs and `within_ticks`. `forbidden_participants` uses the same event-time window to veto a match. `where` checks equality on event fields. The largest `within_ticks` must fit `cep.tick.retention_ticks`. Required domains must actually have active observation/watermark producers; adding a name to configuration alone does not start its services.
+For the thesis notation and the scope of each logical/temporal operator, see the [specification operator map](specification-operators.md). Use `same_round_all` for named events in one stable round; `same_tick_all` is its compatibility alias.
+
+For multiple domains use `participants_all`, with explicit `domain`/`event_type` pairs and `within_rounds`. `forbidden_participants` uses the same event-time window to veto a match. `where` checks equality on event fields. The largest `within_rounds` must fit `cep.round.retention_rounds`. Required domains must actually have active observation/watermark producers; adding a name to configuration alone does not start its services.
 
 ## 4. Start every new producer
 
@@ -145,7 +147,7 @@ python -m runtime validate --config config/service-resilience-host-guard.json
 make integration
 ```
 
-Validate positive and negative participants, unknown references, missing sources, failure/timeout feedback and handler post-conditions. Use storage doubles only in tests. Validate actual Redis delivery and infrastructure separately before claiming a new integration works end to end. Catalog changes are loaded on startup; this distribution does not implement dynamic catalog activation.
+Validate positive and negative participants, unknown references, missing sources, failure/timeout feedback and handler post-conditions. Use storage doubles only in tests. Validate actual Redis delivery and infrastructure separately before claiming a new integration works end to end. Catalog packages are assembled on startup. For runtime switching between predefined, versioned CEP policy profiles, see [meta-reconfiguration](meta-reconfiguration.md).
 
 ## Repository checks and distributable assets
 

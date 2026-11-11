@@ -7,7 +7,7 @@ This directory contains container build definitions, runnable examples and Gridâ
 | [docker](docker/README.md) | Build an all-module toolbox image |
 | [examples/local](examples/local/README.md) | Run the complete service recovery instantiation with one image per module |
 | [examples/monitors](examples/monitors/README.md) | Collect actual HTTP, command and operating-system metrics |
-| [examples/grid5000](examples/grid5000/README.md) | Deploy Syntony or CEP on reserved nodes and explore the optional Ceph example |
+| [examples/grid5000](examples/grid5000/README.md) | Deploy the full pipeline or integrate a CEP component, and distribute a managed system with Syntony across nodes using the Ceph example |
 
 ## Compose entry points
 

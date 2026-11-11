@@ -69,10 +69,47 @@ def boolean_flags(value, fields):
             raise ValueError(f"{field} must be a JSON boolean")
 
 
+def _legacy_round_options(options, aliases):
+    """Resolve round names to the persisted configuration representation."""
+    result = dict(options)
+    for current, legacy in aliases:
+        if current in result:
+            value = result.pop(current)
+            if legacy in result and (
+                type(result[legacy]) is not type(value) or result[legacy] != value
+            ):
+                raise ValueError(f"Conflicting configuration aliases: {current} and {legacy}")
+            result[legacy] = value
+    return result
+
+
+def normalize_pattern_rounds(pattern):
+    return _legacy_round_options(
+        pattern,
+        (("within_rounds", "within_ticks"), ("require_current_round", "require_current_tick")),
+    )
+
+
+def _normalize_cep_rounds(config):
+    cep = dict(config.get("cep", {}))
+    for field in ("round", "tick"):
+        if field in cep:
+            cep[field] = _legacy_round_options(
+                cep[field], (("retention_rounds", "retention_ticks"),)
+            )
+    cep = _legacy_round_options(
+        cep, (("round", "tick"), ("relative_round_origin", "relative_tick_origin"))
+    )
+    if "patterns" in cep:
+        cep["patterns"] = [normalize_pattern_rounds(pattern) for pattern in cep["patterns"]]
+    return {**config, "cep": cep}
+
+
 def validate(config):
     from .cep.patterns import _compile_pattern
     from .composer.rules import _compile_rule
 
+    config = _normalize_cep_rounds(config)
     if type(config.get("schema_version")) is not int or config["schema_version"] != 1:
         raise ValueError("Unsupported configuration schema_version; expected 1")
     domains = config.get("domains", {})
@@ -170,8 +207,8 @@ def validate(config):
     if not required or len(required) != len(set(required)) or not set(required).issubset(domains):
         raise ValueError("watermark_domains must name configured required domains")
     tick = cep.get("tick", {})
-    positive(tick.get("seconds", 1), "tick seconds")
-    positive_integer(tick.get("retention_ticks", 8), "retention ticks")
+    positive(tick.get("seconds", 1), "control-round seconds")
+    positive_integer(tick.get("retention_ticks", 8), "retention rounds")
     boolean_flags(cep, ("relative_tick_origin",))
     timing = config.get("timing", {})
     positive(timing.get("sample_interval_seconds", 0.5), "sample interval")
@@ -265,8 +302,10 @@ def validate(config):
         boolean_flags(pattern, ("force_process", "require_current_tick"))
         if type(pattern.get("priority", 5)) is not int:
             raise ValueError("Pattern priority must be an integer")
-        if pattern.get("type") == "same_tick_all" and not pattern.get("event_types"):
-            raise ValueError("same_tick_all requires event types")
+        if pattern.get("type") in ("same_round_all", "same_tick_all") and not pattern.get(
+            "event_types"
+        ):
+            raise ValueError("same_round_all requires event types")
         if pattern["name"] in policies:
             raise ValueError(f"Duplicate CEP pattern: {pattern['name']}")
         policies.add(pattern["name"])

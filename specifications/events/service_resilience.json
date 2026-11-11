@@ -14,7 +14,7 @@
             "event_type": "application_degraded"
           }
         ],
-        "within_ticks": 2,
+        "within_rounds": 2,
         "coord_type": "E_sync",
         "priority": 1
       },
@@ -35,7 +35,7 @@
             "event_type": "local_service_unavailable"
           }
         ],
-        "within_ticks": 2,
+        "within_rounds": 2,
         "coord_type": "E_sync",
         "priority": 1
       },
@@ -52,7 +52,7 @@
             "event_type": "fallback_active"
           }
         ],
-        "within_ticks": 1,
+        "within_rounds": 1,
         "coord_type": "E_sync",
         "priority": 3
       },
@@ -69,7 +69,7 @@
             "event_type": "dependency_available"
           }
         ],
-        "within_ticks": 1,
+        "within_rounds": 1,
         "coord_type": "E_sync",
         "priority": 0
       },
@@ -86,7 +86,7 @@
             "event_type": "dependency_available"
           }
         ],
-        "within_ticks": 1,
+        "within_rounds": 1,
         "coord_type": "E_sync",
         "priority": 0
       }

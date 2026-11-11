@@ -1,9 +1,33 @@
-# CEP on one Grid node
+# CEP component integration on one Grid node
 
-Use the [common guide](../README.md) with `--profile cep`. This profile starts only the CEP module image and Redis; it does not start Monitors, Composers, Coordinator or Executor.
+This profile packages the correlation stage for an integration that already
+provides metric acquisition and local event composition. Use it to run CEP
+patterns against those observation streams on a reserved node. For a complete
+pipeline with acquisition, coordination and execution, follow the
+[Syntony one-node example](../syntony/README.md).
 
-Configure patterns and required domains before preparing the bundle. Connect real observation/watermark producers to the Docker network `syntony_default` and `redis://redis:6379/0`. Redis is not published on the host network by this compact profile. For producers on other hosts, provide explicitly configured private/authenticated connectivity rather than assuming a Docker bridge spans machines.
+## Component connections
 
-Publish actual `events:obs` envelopes before their corresponding watermark progress. Follow the [event contracts](../../../../docs/event-contracts.md). Without all required domains progressing, the CEP should wait; no fabricated events or watermarks are supplied to make it appear active.
+The profile starts the CEP image and Redis. Existing Monitors and Composers
+supply observations through `events:obs` and domain progress through
+`clock:watermark`. The CEP emits coordination events to `events:coord`.
+Connect a Coordinator and Executor to the same Redis to apply actions and
+publish execution feedback, or inspect the output when validating correlation
+patterns independently.
 
-Use `docker compose exec redis redis-cli` on the selected node to inspect `clock:tick` and `events:coord`. Running containers alone do not demonstrate valid correlation. This is one CEP instance, not a distributed CEP cluster.
+Configure patterns and required domains before preparing the bundle through the
+[common guide](../README.md) with `--profile cep`. Every required domain must
+supply watermark progress for the CEP to close stable rounds.
+
+## Network and stream access
+
+Containers on the selected node can join `syntony_default` and connect to
+`redis://redis:6379/0`. This profile exposes Redis within the Docker network.
+For components running on other hosts, configure private, authenticated Redis
+connectivity in the deployment.
+
+Publish observation envelopes before their corresponding watermark progress.
+Follow the [event contracts](../../../../docs/event-contracts.md) for payloads,
+stream ordering and feedback. Inspect `clock:tick` for closed control rounds
+and `events:coord` for matched patterns with
+`docker compose exec redis redis-cli` on the selected node.
