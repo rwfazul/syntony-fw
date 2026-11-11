@@ -28,7 +28,13 @@ def emit_coord_event(redis_client, event_type, base_event, meta):
         "block_id": meta.get("block_id"),
         "block_domain": meta.get("block_domain") or base_event["domain"],
     }
-    for field in ("policy_profile", "policy_version", "composition_hash"):
+    for field in (
+        "policy_profile",
+        "policy_version",
+        "composition_hash",
+        "evaluation_context",
+        "operator_result",
+    ):
         if field in meta:
             e[field] = meta[field]
     redis_client.xadd("events:coord", {"data": json.dumps(e)})

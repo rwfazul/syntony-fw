@@ -1,0 +1,7 @@
+{
+  "includes": [
+    "syntony_config.json",
+    "../specifications/events/service_temporal_operators.json",
+    "../specifications/policies/service_temporal_operators.json"
+  ]
+}

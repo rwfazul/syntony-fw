@@ -2,6 +2,12 @@
 
 from ..coordinator.internal_state import get_state as get_coordinator_state
 from ..executor.internal_state import get_state as get_execution_state
-from .control import get_flag, get_flags
+from .control import get_flag, get_flag_context, get_flags
 
-__all__ = ["get_coordinator_state", "get_execution_state", "get_flag", "get_flags"]
+__all__ = [
+    "get_coordinator_state",
+    "get_execution_state",
+    "get_flag",
+    "get_flags",
+    "get_flag_context",
+]

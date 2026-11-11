@@ -1,0 +1,39 @@
+{
+  "services": {
+    "monitor_application_service": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "composer_application_service": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "monitor_external_dependency": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "composer_external_dependency": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "cep": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "coordinator": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    },
+    "executor": {
+      "environment": {
+        "SYNTONY_CONFIG_PATH": "/app/config/service-resilience-operators.json"
+      }
+    }
+  }
+}

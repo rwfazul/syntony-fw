@@ -296,7 +296,30 @@ def validate(config):
             raise ValueError(f"Unknown observed event: {domain}/{event}")
 
     for pattern in cep.get("patterns", []):
-        _compile_pattern(pattern)
+        compiled = _compile_pattern(pattern)
+        if "operator" in compiled:
+            if pattern.get("domain") not in required:
+                raise ValueError("Operator patterns require a domain in watermark_domains")
+            if any(
+                key in pattern
+                for key in (
+                    "event_type",
+                    "participants",
+                    "forbidden_participants",
+                    "event_types",
+                    "requires_event_types",
+                    "where",
+                )
+            ):
+                raise ValueError("Declare operator predicates inside expressions")
+            for expression in compiled["operator"]["expressions"]:
+                for participant in expression.participants:
+                    check_event(participant["domain"], participant["event_type"])
+                    if participant["domain"] not in required:
+                        raise ValueError("Expression domains must be in watermark_domains")
+                for domain, flag in expression.flags:
+                    if flag not in flags.get(domain, {}):
+                        raise ValueError("Expression references an undeclared state flag")
         if pattern.get("type") == "count_event":
             positive_integer(pattern.get("count", 0), "event count")
         boolean_flags(pattern, ("force_process", "require_current_tick"))
@@ -315,7 +338,7 @@ def validate(config):
             positive(pattern["deadline_seconds"], "pattern deadline")
         window = pattern.get("within_ticks", 1)
         positive_integer(window, "pattern window")
-        if window > tick.get("retention_ticks", 8):
+        if max(window, compiled["window"]) > tick.get("retention_ticks", 8):
             raise ValueError("Pattern window exceeds retention horizon")
         for participant in pattern.get("participants", []) + pattern.get(
             "forbidden_participants", []

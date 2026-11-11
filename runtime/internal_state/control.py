@@ -8,6 +8,7 @@ from ..common import load_syntony_config
 from ..policy_profiles import ACTIVE_PROFILE, profile_matches
 
 FLAGS_KEY = "control:flags"
+PREVIOUS_FLAGS_KEY = "control:previous_flags"
 PLANS_KEY = "control:plans"
 EXCLUSIVE_KEY = "control:exclusive"
 TRANSITIONS_KEY = "control:outcomes"
@@ -37,6 +38,37 @@ def get_flags(client, config=None):
     }
 
 
+def get_flag_context(client, config=None):
+    """Read current flags and their pre-transition values in one Redis transaction."""
+    config = config or load_syntony_config()
+    with client.pipeline() as pipe:
+        pipe.hgetall(FLAGS_KEY)
+        pipe.hgetall(PREVIOUS_FLAGS_KEY)
+        current, previous = pipe.execute()
+    context = {"current": {}, "previous": {}}
+    for domain, flags in config.get("state", {}).get("flags", {}).items():
+        context["current"][domain] = {}
+        context["previous"][domain] = {}
+        for name, default in flags.items():
+            key = flag_key(domain, name)
+            raw_value = current.get(key, current.get(key.encode()))
+            raw_prior = previous.get(key, previous.get(key.encode()))
+            value = json.loads(raw_value) if raw_value is not None else default
+            prior = json.loads(raw_prior) if raw_prior is not None else value
+            if type(value) is not bool or type(prior) is not bool:
+                raise ValueError(f"Invalid persisted state flag: {domain}/{name}")
+            context["current"][domain][name] = value
+            context["previous"][domain][name] = prior
+    return context
+
+
+def _previous_values(client, values, config):
+    return {
+        domain: {name: get_flag(client, domain, name, config) for name in flags}
+        for domain, flags in values.items()
+    }
+
+
 def guards_match(client, required, config=None):
     return all(
         get_flag(client, domain, name, config) == expected
@@ -45,9 +77,13 @@ def guards_match(client, required, config=None):
     )
 
 
-def write_flags(client, values):
+def write_flags(client, values, previous=None):
     for domain, flags in values.items():
         for name, value in flags.items():
+            if previous is not None:
+                client.hset(
+                    PREVIOUS_FLAGS_KEY, flag_key(domain, name), json.dumps(previous[domain][name])
+                )
             client.hset(FLAGS_KEY, flag_key(domain, name), json.dumps(value))
 
 
@@ -107,8 +143,10 @@ def admit_plan(client, event, actions, config=None):
                     state="dispatched",
                     created_at=time.time(),
                 )
+                updates = constraints.get("set_flags_on_dispatch", {})
+                previous = _previous_values(pipe, updates, config)
                 pipe.multi()
-                write_flags(pipe, constraints.get("set_flags_on_dispatch", {}))
+                write_flags(pipe, updates, previous)
                 if exclusive:
                     pipe.hset(EXCLUSIVE_KEY, exclusive, ticket)
                 pipe.hset(PLANS_KEY, ticket, json.dumps(plan))
@@ -204,8 +242,9 @@ def apply_outcome(client, action, result, handler, config=None):
                             retained.setdefault(domain, {}).update(flags)
                     for domain, flags in plan.get("uncertain_flags", {}).items():
                         updates.setdefault(domain, {}).update(flags)
+                previous = _previous_values(pipe, updates, config)
                 pipe.multi()
-                write_flags(pipe, updates)
+                write_flags(pipe, updates, previous)
                 for name in releases:
                     if owners.get(name):
                         pipe.hdel(EXCLUSIVE_KEY, name)

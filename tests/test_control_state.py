@@ -615,6 +615,108 @@ class ControlStateTests(unittest.TestCase):
         self.assertTrue(all(event["base_event"] == "E_fed" for event in coordination))
         self.assertTrue(all(event["tick_end"] <= boundary for event in coordination))
 
+    def test_previous_flags_follow_atomic_transitions_and_ignore_outcome_redelivery(self):
+        from runtime.internal_state.control import get_flag_context
+
+        event, actions = self.plan()
+        admit_plan(self.client, event, actions, self.config)
+        context = get_flag_context(self.client, self.config)
+        name = "service_reconfiguration_running"
+        self.assertTrue(context["current"][self.domain][name])
+        self.assertFalse(context["previous"][self.domain][name])
+        self.outcome(actions[0])
+        completed = get_flag_context(self.client, self.config)
+        self.assertFalse(completed["current"][self.domain][name])
+        self.assertTrue(completed["previous"][self.domain][name])
+        self.outcome(actions[0])
+        self.assertEqual(get_flag_context(self.client, self.config), completed)
+        port = self.client.connection_pool.connection_kwargs["port"]
+        with redis.Redis(host="127.0.0.1", port=port) as binary_client:
+            self.assertEqual(get_flag_context(binary_client, self.config), completed)
+
+    def test_cep_restores_pending_obligations_and_expires_them_once(self):
+        from runtime.cep.cep import ROUND_CHECKPOINT_KEY
+
+        config = self.config
+        app = "application_service"
+        policy = config["cep"]["patterns"][0]["name"]
+        config["cep"]["patterns"][0] = dict(
+            name=policy,
+            type="obligation",
+            domain=app,
+            coord_type="E_trg",
+            within_rounds=2,
+            when=dict(op="event", domain=app, event_type="application_degraded"),
+            ensure={
+                "op": "and",
+                "args": [
+                    dict(op="event", domain=app, event_type="local_service_available"),
+                    dict(op="state", domain=app, flag="service_status_unknown", value=False),
+                ],
+            },
+        )
+        validate(config)
+
+        def advance(value):
+            for domain in config["cep"]["watermark_domains"]:
+                self.client.xadd(
+                    "clock:watermark", {"data": json.dumps(dict(domain=domain, watermark=value))}
+                )
+
+        def run_until(round_index):
+            process = subprocess.Popen(
+                [sys.executable, "-m", "runtime", "cep"],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            try:
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline and process.poll() is None:
+                    saved = json.loads(self.client.get(ROUND_CHECKPOINT_KEY) or "{}")
+                    if saved.get("last_closed_round") == round_index:
+                        return saved
+                    time.sleep(0.02)
+                self.fail(f"CEP did not checkpoint round {round_index}")
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                process.communicate(timeout=5)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "instance.json"
+            path.write_text(json.dumps(config))
+            port = self.client.connection_pool.connection_kwargs["port"]
+            env = dict(
+                os.environ, SYNTONY_CONFIG_PATH=str(path), REDIS_URL=f"redis://127.0.0.1:{port}/0"
+            )
+            self.client.xadd(
+                "events:obs",
+                {
+                    "data": json.dumps(
+                        dict(domain=app, event_type="application_degraded", event_time=100.2)
+                    )
+                },
+            )
+            advance(101)
+            saved = run_until(0)
+            pending = saved["operator_state"]["pending"][policy]
+            self.assertEqual(len(pending), 1)
+            self.assertEqual(self.client.xlen("events:temporal"), 0)
+            advance(103)
+            saved = run_until(2)
+            self.assertEqual(saved["operator_state"]["pending"][policy], [])
+            self.assertIn("0", saved["operator_state"]["snapshots"])
+            advance(104)
+            run_until(3)
+        outcomes = [json.loads(row["data"]) for _, row in self.client.xrange("events:temporal")]
+        self.assertEqual(
+            [(row["status"], row["resolved_round"]) for row in outcomes], [("violated", 2)]
+        )
+        coordination = [json.loads(row["data"]) for _, row in self.client.xrange("events:coord")]
+        self.assertEqual([(row["policy"], row["tick"]) for row in coordination], [(policy, 2)])
+
     def test_cep_restart_restores_round_table_without_republishing_committed_rounds(self):
         from runtime.cep.cep import ROUND_CHECKPOINT_KEY
 
@@ -672,6 +774,7 @@ class ControlStateTests(unittest.TestCase):
             observation(app, "application_degraded", 101.2)
             advance_watermarks(101)
             first = run_until_checkpoint(0)
+            self.assertNotIn("operator_state", first)
             self.assertIn("1", first["round_table"])
             self.assertEqual(self.client.xlen("events:coord"), 1)
 

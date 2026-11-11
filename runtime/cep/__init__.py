@@ -1,6 +1,7 @@
 """Stable-round correlation and coordination-event generation."""
 
 from .cep import cep_loop, close_stable_rounds, close_stable_ticks, effective_watermark
+from .expressions import OperatorRuntime, compile_expression
 from .patterns import _compile_pattern as compile_pattern
 
 __all__ = [
@@ -8,5 +9,7 @@ __all__ = [
     "close_stable_rounds",
     "close_stable_ticks",
     "compile_pattern",
+    "compile_expression",
+    "OperatorRuntime",
     "cep_loop",
 ]

@@ -9,6 +9,7 @@ from math import floor
 
 from ..common import get_logger, get_redis_client, load_syntony_config, log_event
 from ..policy_profiles import ACTIVE_PROFILE, PROFILE_REQUESTS, PolicyProfiles
+from .expressions import OperatorRuntime
 from .patterns import get_patterns
 from .utils import emit_coord_event, emit_tick
 
@@ -81,11 +82,14 @@ def close_stable_rounds(
     retention_rounds,
     global_watermark,
     last_closed_round,
-    fallback_event=None,
+    fallback_event=None,  # noqa: ARG001 - Retained for callers of the round closure API.
     round_origin_seconds=0.0,
     before_round=None,
+    operators=None,
 ):
     """Close newly stable rounds, evaluate patterns and prune the Round Table."""
+    if operators is None and any("operator" in pattern for pattern in patterns):
+        raise ValueError("Pass one OperatorRuntime across operator round evaluations")
     stable_round = watermark_to_stable_round(
         global_watermark,
         round_seconds,
@@ -124,44 +128,67 @@ def close_stable_rounds(
         for round_index in rounds_to_check:
             all_events.extend(round_table[round_index])
 
-        for pattern in patterns:
-            if not pattern["match"](all_events, round_table, last_closed_round):
-                continue
-            base_event = pattern_anchor(pattern, all_events, last_closed_round)
-            if not base_event:
-                continue
-            meta = {
-                **profile_fields,
-                "priority": pattern["priority"],
-                "policy": pattern["name"],
-                "deadline": (time.time() + pattern["deadline_seconds"])
-                if pattern.get("deadline_seconds") is not None
-                else None,
-                "tick": last_closed_round,
-                "tick_start": tick_start,
-                "tick_end": tick_end,
-                "watermark": global_watermark,
-                "force_process": pattern.get("force_process", False),
-                "action_override": pattern.get("action_override"),
-                "participants": pattern.get("participants", []),
-                "blocked_action_types": pattern.get("blocked_action_types", []),
-                "block_ttl_seconds": pattern.get("block_ttl_seconds"),
-                "block_scope": pattern.get("block_scope", "global"),
-                "block_id": pattern.get("block_id"),
-                "block_domain": pattern.get("block_domain"),
-            }
-            emit_coord_event(redis_client, pattern["coord_type"], base_event, meta)
-            log_event(
-                logger,
-                "info",
-                "coord_event_emitted",
-                domain=base_event["domain"],
-                tick=last_closed_round,
-                policy=pattern["name"],
-                coord_type=pattern["coord_type"],
-                watermark=round(global_watermark, 6),
-                force_process=meta["force_process"],
+        if operators is not None:
+            operators.begin_round(
+                redis_client,
+                [pattern for pattern in patterns if "operator" in pattern],
+                last_closed_round,
+                retention_rounds,
+                profile_fields,
             )
+        for pattern in patterns:
+            if "operator" in pattern:
+                evaluations = operators.evaluate(
+                    redis_client, pattern, round_table, last_closed_round, tick_end
+                )
+            else:
+                if not pattern["match"](all_events, round_table, last_closed_round):
+                    continue
+                base_event = pattern_anchor(pattern, all_events, last_closed_round)
+                if not base_event:
+                    continue
+                evaluations = [{"anchor": base_event}]
+            for evaluation in evaluations:
+                base_event = evaluation["anchor"]
+                meta = {
+                    **profile_fields,
+                    "priority": pattern["priority"],
+                    "policy": pattern["name"],
+                    "deadline": (time.time() + pattern["deadline_seconds"])
+                    if pattern.get("deadline_seconds") is not None
+                    else None,
+                    "tick": last_closed_round,
+                    "tick_start": tick_start,
+                    "tick_end": tick_end,
+                    "watermark": global_watermark,
+                    "force_process": pattern.get("force_process", False),
+                    "action_override": pattern.get("action_override"),
+                    "participants": pattern.get("participants", []),
+                    "blocked_action_types": pattern.get("blocked_action_types", []),
+                    "block_ttl_seconds": pattern.get("block_ttl_seconds"),
+                    "block_scope": pattern.get("block_scope", "global"),
+                    "block_id": pattern.get("block_id"),
+                    "block_domain": pattern.get("block_domain"),
+                }
+                if "operator" in pattern:
+                    meta["evaluation_context"] = {
+                        "source": "stable_round",
+                        "round": last_closed_round,
+                    }
+                    if "operator_result" in evaluation:
+                        meta["operator_result"] = evaluation["operator_result"]
+                emit_coord_event(redis_client, pattern["coord_type"], base_event, meta)
+                log_event(
+                    logger,
+                    "info",
+                    "coord_event_emitted",
+                    domain=base_event["domain"],
+                    tick=last_closed_round,
+                    policy=pattern["name"],
+                    coord_type=pattern["coord_type"],
+                    watermark=round(global_watermark, 6),
+                    force_process=meta["force_process"],
+                )
 
         for old_round in list(round_table.keys()):
             if old_round < last_closed_round - retention_rounds:
@@ -229,6 +256,15 @@ def cep_loop():
             domain_watermarks, watermark_policy, required_watermark_domains
         )
 
+    operators = None
+    if any("operator" in pattern for pattern in patterns):
+        from ..internal_state.control import get_flag_context
+
+        operators = OperatorRuntime(
+            saved.get("operator_state"),
+            state_reader=partial(get_flag_context, redis_client, config),
+        )
+
     profiles = None
     if cep_cfg.get("policy_profiles"):
         profiles = PolicyProfiles(config, patterns, saved)
@@ -288,16 +324,12 @@ def cep_loop():
                                 times.append(timestamp)
                         except (KeyError, TypeError, ValueError):
                             pass
-                if not times:
-                    # Invalid records are skipped below and their cursors advance.
-                    pass
-                else:
+                if times:
                     round_origin_seconds, last_closed_round = initial_round_position(
                         times, round_seconds, relative_round_origin
                     )
                     initialized = True
 
-            fallback_event = None
             for stream_name, events in sorted(resp, key=lambda pair: pair[0] == "clock:watermark"):
                 for eid, event_data in events:
                     last_ids[stream_name] = eid
@@ -370,9 +402,9 @@ def cep_loop():
                             retention_rounds,
                             current_watermark,
                             last_closed_round,
-                            fallback_event=fallback_event,
                             round_origin_seconds=round_origin_seconds or 0.0,
                             before_round=before_round,
+                            operators=operators,
                         )
                         continue
 
@@ -408,7 +440,6 @@ def cep_loop():
                         continue
                     event["tick"] = event_round
                     round_table.setdefault(event_round, []).append(event)
-                    fallback_event = event
                     log_event(
                         logger,
                         "info",
@@ -474,9 +505,9 @@ def cep_loop():
                         retention_rounds,
                         current_watermark,
                         last_closed_round,
-                        fallback_event=fallback_event,
                         round_origin_seconds=origin_seconds,
                         before_round=before_round,
+                        operators=operators,
                     )
 
             next_checkpoint = json.dumps(
@@ -489,6 +520,7 @@ def cep_loop():
                     "round_origin_seconds": round_origin_seconds,
                     "last_closed_round": last_closed_round,
                     "initialized": initialized,
+                    **({"operator_state": operators.checkpoint()} if operators else {}),
                     **(
                         {"active_profile": profiles.state, "profile_requests": profiles.pending}
                         if profiles

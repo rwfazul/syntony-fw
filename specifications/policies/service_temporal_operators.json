@@ -1,0 +1,31 @@
+{
+  "coordinator": {
+    "policy_mappings": {
+      "verify_unmet_local_recovery_obligation": [
+        {
+          "type": "VERIFY_LOCAL_SERVICE",
+          "domain": "application_service",
+          "params": {}
+        }
+      ]
+    },
+    "policy_constraints": {
+      "verify_unmet_local_recovery_obligation": {
+        "required_flags": {
+          "application_service": {
+            "service_recovery_needed": true,
+            "service_reconfiguration_running": false
+          }
+        },
+        "deadline_seconds": 10
+      }
+    },
+    "dedupe_rules": [
+      {
+        "policy": "verify_unmet_local_recovery_obligation",
+        "scope": "global",
+        "window_seconds": 3
+      }
+    ]
+  }
+}

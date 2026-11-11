@@ -2,6 +2,7 @@
 
 from ..common import load_syntony_config
 from ..configuration import normalize_pattern_rounds
+from .expressions import compile_operator
 
 
 def _matches_configured_fields(event, expected_fields):
@@ -19,10 +20,12 @@ def _matches_participant(event, participant):
 def _compile_pattern(pattern_cfg):
     pattern_cfg = normalize_pattern_rounds(pattern_cfg)
     pattern_type = pattern_cfg.get("type")
+    operator = None
+    match = None
 
     if pattern_type == "count_event":
 
-        def match(events, round_table, tick, cfg=pattern_cfg):
+        def match(events, round_table, tick, cfg=pattern_cfg):  # noqa: ARG001 - Shared pattern matcher signature.
             round_index = tick
             minimum_round = round_index - cfg.get("within_ticks", 1) + 1
             relevant = [
@@ -38,7 +41,7 @@ def _compile_pattern(pattern_cfg):
             return count >= cfg["count"]
     elif pattern_type in ("same_round_all", "same_tick_all"):
 
-        def match(events, round_table, tick, cfg=pattern_cfg):
+        def match(events, round_table, tick, cfg=pattern_cfg):  # noqa: ARG001 - Shared pattern matcher signature.
             round_index = tick
             types = {
                 event["event_type"]
@@ -80,7 +83,7 @@ def _compile_pattern(pattern_cfg):
             )
     elif pattern_type == "passthrough_event":
 
-        def match(events, round_table, tick, cfg=pattern_cfg):
+        def match(events, round_table, tick, cfg=pattern_cfg):  # noqa: ARG001 - Shared pattern matcher signature.
             round_index = tick
             round_events = round_table.get(round_index, [])
             expected_fields = cfg.get("where", {})
@@ -92,10 +95,12 @@ def _compile_pattern(pattern_cfg):
                 and _matches_configured_fields(event, expected_fields)
                 for event in round_events
             )
+    elif pattern_type in {"expression", "obligation"}:
+        operator = compile_operator(pattern_cfg)
     else:
         raise ValueError(f"Unsupported pattern type: {pattern_type}")
 
-    return {
+    compiled = {
         "name": pattern_cfg["name"],
         "domain": pattern_cfg.get("domain"),
         "event_type": pattern_cfg.get("event_type"),
@@ -114,6 +119,10 @@ def _compile_pattern(pattern_cfg):
         "block_domain": pattern_cfg.get("block_domain", pattern_cfg.get("domain")),
         "match": match,
     }
+    if operator is not None:
+        compiled["operator"] = operator
+        compiled["window"] = operator["horizon"]
+    return compiled
 
 
 def get_patterns():

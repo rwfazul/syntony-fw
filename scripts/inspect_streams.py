@@ -22,6 +22,7 @@ def main():
             "events:obs",
             "events:late",
             "events:coord",
+            "events:temporal",
             "executor:commands",
             "clock:watermark",
             "clock:tick",

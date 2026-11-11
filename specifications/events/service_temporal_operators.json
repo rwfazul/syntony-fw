@@ -1,0 +1,154 @@
+{
+  "cep": {
+    "patterns": [
+      {
+        "name": "guard_failure_without_recent_dependency_health",
+        "domain": "application_service",
+        "coord_type": "E_block",
+        "block_id": "temporal_recovery_guard",
+        "block_domain": "application_service",
+        "blocked_action_types": [
+          "RESTART_LOCAL_SERVICE"
+        ],
+        "block_scope": "global",
+        "block_ttl_seconds": 3,
+        "priority": 0,
+        "type": "expression",
+        "expression": {
+          "op": "and",
+          "args": [
+            {
+              "op": "or",
+              "args": [
+                {
+                  "op": "event",
+                  "domain": "application_service",
+                  "event_type": "application_degraded"
+                },
+                {
+                  "op": "event",
+                  "domain": "application_service",
+                  "event_type": "local_service_unavailable"
+                }
+              ]
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "eventually",
+                "rounds": 2,
+                "arg": {
+                  "op": "event",
+                  "domain": "external_dependency",
+                  "event_type": "dependency_available"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "verify_unmet_local_recovery_obligation",
+        "domain": "application_service",
+        "coord_type": "E_trg",
+        "priority": 0,
+        "type": "obligation",
+        "when": {
+          "op": "event",
+          "domain": "application_service",
+          "event_type": "local_service_unavailable"
+        },
+        "ensure": {
+          "op": "event",
+          "domain": "application_service",
+          "event_type": "local_service_available"
+        },
+        "within_rounds": 3,
+        "emit_on": "violated"
+      },
+      {
+        "name": "guard_unhealthy_fallback_until_dependency_recovers",
+        "domain": "application_service",
+        "coord_type": "E_block",
+        "block_id": "temporal_recovery_guard",
+        "block_domain": "application_service",
+        "blocked_action_types": [
+          "RESTART_LOCAL_SERVICE"
+        ],
+        "block_scope": "global",
+        "block_ttl_seconds": 3,
+        "priority": 0,
+        "type": "obligation",
+        "when": {
+          "op": "event",
+          "domain": "application_service",
+          "event_type": "fallback_active"
+        },
+        "ensure": {
+          "op": "event",
+          "domain": "external_dependency",
+          "event_type": "dependency_available"
+        },
+        "maintain": {
+          "op": "not",
+          "arg": {
+            "op": "event",
+            "domain": "application_service",
+            "event_type": "local_service_unavailable"
+          }
+        },
+        "within_rounds": 3,
+        "emit_on": "violated"
+      },
+      {
+        "name": "release_temporal_guard_after_stable_health",
+        "domain": "application_service",
+        "coord_type": "E_unblock",
+        "block_id": "temporal_recovery_guard",
+        "block_domain": "application_service",
+        "priority": 0,
+        "type": "expression",
+        "expression": {
+          "op": "always",
+          "rounds": 2,
+          "arg": {
+            "op": "event",
+            "domain": "application_service",
+            "event_type": "local_service_available"
+          }
+        }
+      },
+      {
+        "name": "release_temporal_guard_after_completed_transition",
+        "domain": "application_service",
+        "coord_type": "E_unblock",
+        "block_id": "temporal_recovery_guard",
+        "block_domain": "application_service",
+        "priority": 0,
+        "type": "expression",
+        "expression": {
+          "op": "and",
+          "args": [
+            {
+              "op": "prev",
+              "domain": "application_service",
+              "flag": "service_reconfiguration_running",
+              "value": true
+            },
+            {
+              "op": "state",
+              "domain": "application_service",
+              "flag": "service_reconfiguration_running",
+              "value": false
+            },
+            {
+              "op": "event",
+              "domain": "application_service",
+              "event_type": "local_service_available"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
